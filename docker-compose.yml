@@ -1,0 +1,24 @@
+version: '3.8'
+
+services:
+  my_fast_api:
+    build:
+      context: .
+      dockerfile: ./my_fast_api_docker/my_fast_api.Dockerfile
+    ports:
+      - '12:12'
+    volumes:
+      - ./MyFastAPI:/mycode/MyFastAPI
+    tty: true
+    entrypoint: python /mycode/MyFastAPI/main.py
+
+  animated_drawings:
+    build:
+      context: .
+      dockerfile: ./animated_drawings_docker/animated_drawings.Dockerfile
+    ports:
+      - '50:50'
+    volumes:
+      - ./AnimatedDrawings:/mycode/AnimatedDrawings
+    tty: true
+    entrypoint: conda run -n animated_drawings python AnimatedDrawings/rest_api/animated_drawings_api.py
