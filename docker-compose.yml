@@ -1,24 +1,38 @@
 version: '3.8'
+name: myfastapp
 
 services:
-  my_fast_api:
+  torchserve:
+    container_name: torchserve
     build:
-      context: .
-      dockerfile: ./my_fast_api_docker/my_fast_api.Dockerfile
+      context: ./AnimatedDrawings/torchserve
+      dockerfile: Dockerfile
     ports:
-      - '12:12'
-    volumes:
-      - ./MyFastAPI:/mycode/MyFastAPI
-    tty: true
-    entrypoint: python /mycode/MyFastAPI/main.py
+      - 8080:8080
+      - 8081:8081
 
   animated_drawings:
+    depends_on:
+      - torchserve
+    container_name: animated_drawings
     build:
       context: .
       dockerfile: ./animated_drawings_docker/animated_drawings.Dockerfile
     ports:
-      - '50:50'
+      - 50:50
     volumes:
       - ./AnimatedDrawings:/mycode/AnimatedDrawings
-    tty: true
     entrypoint: conda run -n animated_drawings python AnimatedDrawings/rest_api/animated_drawings_api.py
+
+  my_fast_api:
+    depends_on:
+      - animated_drawings
+    container_name: my_fast_api 
+    build:
+      context: .
+      dockerfile: ./my_fast_api_docker/my_fast_api.Dockerfile
+    ports:
+      - 12:12
+    volumes:
+      - ./MyFastAPI:/mycode/MyFastAPI
+    entrypoint: python /mycode/MyFastAPI/main.py

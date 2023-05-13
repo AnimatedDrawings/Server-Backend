@@ -13,4 +13,7 @@ git clone https://github.com/facebookresearch/AnimatedDrawings.git
 cp -R AnimatedDrawings/examples AnimatedDrawings/rest_api
 cp animated_drawings_docker/animated_drawings_api.py AnimatedDrawings/rest_api
 docker-compose up -d
+
+# AnimatedDrawings/rest_api/image_to_annotations.py, line 51, 85
+# replace localhost -> torchserve
 ```
