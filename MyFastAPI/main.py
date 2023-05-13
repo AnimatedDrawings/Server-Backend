@@ -8,10 +8,16 @@ app = FastAPI()
 def ping():
     return {'MyFastAPI test ping success!!'}
 
-@app.get('/get_from_animated_drawings')
-async def get_from_animated_drawings():
+@app.get('/test_docker_network')
+async def test_docker_network():
     async with httpx.AsyncClient() as client:
-        response = await client.get(url='http://animated_drawings:50/return_to_mfa')
+        response = await client.get(url='http://animated_drawings:50/ping')
+        return response.text
+
+@app.get('/get_my_animated_drawings')
+async def get_my_animated_drawings():
+    async with httpx.AsyncClient() as client:
+        response = await client.get(url='http://animated_drawings:50/get_my_animated_drawings')
         return response.text
 
 if __name__ == '__main__':
