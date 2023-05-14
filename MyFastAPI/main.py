@@ -3,6 +3,7 @@ import uvicorn
 import httpx
 
 app = FastAPI()
+timeout = httpx.Timeout(5, read=None)
 
 @app.get('/ping')
 def ping():
@@ -17,7 +18,7 @@ async def test_docker_network():
 @app.get('/get_my_animated_drawings')
 async def get_my_animated_drawings():
     async with httpx.AsyncClient() as client:
-        response = await client.get(url='http://animated_drawings:50/get_my_animated_drawings')
+        response = await client.get(url='http://animated_drawings:50/get_my_animated_drawings', timeout=timeout)
         return response.text
 
 if __name__ == '__main__':
