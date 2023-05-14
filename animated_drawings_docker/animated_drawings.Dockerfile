@@ -37,3 +37,5 @@ RUN conda init bash \
     && export PYOPENGL_PLATFORM=osmesa \
     && conda install -c conda-forge libstdcxx-ng \
     && conda install cmake
+
+WORKDIR /mycode/AnimatedDrawings/rest_api

@@ -22,7 +22,7 @@ services:
       - 50:50
     volumes:
       - ./AnimatedDrawings:/mycode/AnimatedDrawings
-    entrypoint: conda run --no-capture-output -n animated_drawings python -u AnimatedDrawings/rest_api/animated_drawings_api.py
+    entrypoint: conda run --no-capture-output -n animated_drawings python -u animated_drawings_api.py
 
   my_fast_api:
     depends_on:

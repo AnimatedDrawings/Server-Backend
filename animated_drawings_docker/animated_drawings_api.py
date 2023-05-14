@@ -17,7 +17,7 @@ def get_my_animated_drawings():
     log_dir.mkdir(exist_ok=True, parents=True)
     logging.basicConfig(filename=f'{log_dir}/log.txt', level=logging.DEBUG)
 
-    img_fn = 'drawings/garlic.png'
+    img_fn = resource_filename(__name__, 'drawings/garlic.png')  
     char_anno_dir = 'garlic_out'
     motion_cfg_fn = resource_filename(__name__, 'config/motion/dab.yaml')    
     retarget_cfg_fn = resource_filename(__name__, 'config/retarget/fair1_ppf.yaml')
