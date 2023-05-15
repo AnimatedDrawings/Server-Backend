@@ -8,14 +8,11 @@ This repo is created to service result of [Animated Drawings](https://github.com
 ### Installation
 ``` bash
 # IN CLI
-# clone MyFastAPI 
-git clone https://github.com/chminipark/MyFastAPP.git
+# clone branch name "initial" of MyFastAPI 
+git clone -b initial https://github.com/chminipark/MyFastAPP.git
 
 # check current path "MyFastApp/." and continue installation
 cd MyFastApp
-
-# check current branch name "initial"
-git checkout initial
 
 # clone AnimatedDrawings and add rest_api dependency
 # build docker-compose
