@@ -1,0 +1,14 @@
+version: '3.8'
+name: adfastapi
+
+services:
+  test_fast_api:
+    container_name: test_fast_api 
+    build:
+      context: .
+      dockerfile: ./test_fast_api.Dockerfile
+    ports:
+      - 5000:5000
+    volumes:
+      - ./TestFastAPIVolume:/mycode/TestFastAPI
+    entrypoint: python /mycode/TestFastAPI/main.py
