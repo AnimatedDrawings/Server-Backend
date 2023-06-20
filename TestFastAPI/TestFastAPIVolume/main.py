@@ -5,6 +5,10 @@ import httpx
 app = FastAPI()
 timeout = httpx.Timeout(5, read=None)
 
+@app.get('/')
+def adroot():
+    return {'MyFastAPI Root!!'}
+
 @app.get('/ping')
 def ping():
     return {'MyFastAPI test ping success!!'}
