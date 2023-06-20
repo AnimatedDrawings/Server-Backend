@@ -1,5 +1,4 @@
 version: '3.8'
-name: adfastapi
 
 services:
   test_fast_api:
