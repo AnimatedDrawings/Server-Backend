@@ -19,7 +19,7 @@ cd Server-Backend
 git clone https://github.com/facebookresearch/AnimatedDrawings.git
 cp -R AnimatedDrawings/examples AnimatedDrawings/rest_api
 cp animated_drawings_docker/animated_drawings_api.py AnimatedDrawings/rest_api
-docker-compose up -d
+sudo docker-compose up -d
 
 
 # MODIFY CODE
