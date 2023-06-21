@@ -9,7 +9,7 @@ app = Flask(__name__)
 
 @app.route('/ping')
 def ping():
-    return 'AnimatedDrawings test ping success!!'
+    return 'animated_drawings test ping success!!'
 
 @app.route('/get_my_animated_drawings')
 def get_my_animated_drawings():
@@ -30,4 +30,4 @@ def get_my_animated_drawings():
     return 'animation success!'
 
 if __name__ == '__main__':
-    app.run(debug=True, host='0.0.0.0', port='50')
+    app.run(debug=True, host='0.0.0.0', port='8001')
