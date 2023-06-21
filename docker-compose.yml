@@ -1,5 +1,4 @@
 version: '3.8'
-name: myfastapp
 
 services:
   torchserve:
@@ -7,9 +6,9 @@ services:
     build:
       context: ./AnimatedDrawings/torchserve
       dockerfile: Dockerfile
-    ports:
-      - 8080:8080
-      - 8081:8081
+    expose:
+      - 8080
+      - 8081
 
   animated_drawings:
     depends_on:
@@ -18,21 +17,21 @@ services:
     build:
       context: .
       dockerfile: ./animated_drawings_docker/animated_drawings.Dockerfile
-    ports:
-      - 50:50
+    expose:
+      - 8001
     volumes:
       - ./AnimatedDrawings:/mycode/AnimatedDrawings
     entrypoint: conda run --no-capture-output -n animated_drawings python -u animated_drawings_api.py
 
-  my_fast_api:
+  ad_fast_api:
     depends_on:
       - animated_drawings
-    container_name: my_fast_api 
+    container_name: ad_fast_api 
     build:
       context: .
-      dockerfile: ./my_fast_api_docker/my_fast_api.Dockerfile
+      dockerfile: ./ad_fast_api_docker/ad_fast_api.Dockerfile
     ports:
-      - 12:12
+      - 8000:8000
     volumes:
-      - ./MyFastAPI:/mycode/MyFastAPI
-    entrypoint: python /mycode/MyFastAPI/main.py
+      - ./ADFastAPI:/mycode/ADFastAPI
+    entrypoint: python /mycode/ADFastAPI/main.py
