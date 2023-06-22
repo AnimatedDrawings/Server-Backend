@@ -5,6 +5,19 @@ import httpx
 app = FastAPI()
 timeout = httpx.Timeout(5, read=None)
 
+class ADURL:
+    def __init__(self):
+        self.base_url = 'http://animated_drawings:8001'
+    
+    def add_path(self, path_list: list) -> str:
+        tmp_url = self.base_url
+        for path in path_list:
+            tmp_url += '/' + path
+
+        return tmp_url
+
+ad_url = ADURL()
+
 @app.get('/ping')
 def ping():
     return {'ad_fast_api test ping success!!'}
@@ -12,13 +25,13 @@ def ping():
 @app.get('/ping_ad')
 async def test_docker_network():
     async with httpx.AsyncClient() as client:
-        response = await client.get(url='http://animated_drawings:8001/ping')
+        response = await client.get(url = ad_url.add_path(['ping']))
         return response.text
 
-@app.get('/get_my_animated_drawings')
-async def get_my_animated_drawings():
+@app.get('/get_animated_drawings')
+async def get_animated_drawings():
     async with httpx.AsyncClient() as client:
-        response = await client.get(url='http://animated_drawings:8001/get_my_animated_drawings', timeout=timeout)
+        response = await client.get(url = ad_url.add_path(['get_animated_drawings']), timeout=timeout)
         return response.text
 
 if __name__ == '__main__':

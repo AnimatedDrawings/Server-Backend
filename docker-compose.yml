@@ -26,7 +26,7 @@ services:
   ad_fast_api:
     depends_on:
       - animated_drawings
-    container_name: ad_fast_api 
+    container_name: ad_fast_api
     build:
       context: .
       dockerfile: ./ad_fast_api_docker/ad_fast_api.Dockerfile
