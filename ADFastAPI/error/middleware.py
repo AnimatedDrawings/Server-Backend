@@ -1,7 +1,7 @@
 import http
 import time
 from fastapi import Request
-from Error.logger import logger
+from error.logger import logger
 
 async def log_request_middleware(request: Request, call_next):
     """

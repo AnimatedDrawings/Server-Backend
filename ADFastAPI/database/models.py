@@ -2,7 +2,7 @@ from database.database import Base
 from sqlalchemy import Column, Integer, LargeBinary, String
 
 class AD(Base):
-    __tablename__ = 'AD'
+    __tablename__ = 'AnimatedDrawings'
 
     id = Column(Integer, primary_key=True)
     name = Column(String, nullable=True)
