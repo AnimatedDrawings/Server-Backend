@@ -4,8 +4,18 @@ import httpx
 
 from domain.AD import AD_router
 
+from starlette.exceptions import HTTPException
+from fastapi.exceptions import RequestValidationError
+from Error.exception_handlers import request_validation_exception_handler, http_exception_handler, unhandled_exception_handler
+from Error.middleware import log_request_middleware
+
 app = FastAPI()
 timeout = httpx.Timeout(5, read=None)
+
+app.middleware("http")(log_request_middleware)
+app.add_exception_handler(RequestValidationError, request_validation_exception_handler)
+app.add_exception_handler(HTTPException, http_exception_handler)
+app.add_exception_handler(Exception, unhandled_exception_handler)
 
 class ADURL:
     def __init__(self):
