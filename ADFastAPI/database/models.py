@@ -1,7 +1,9 @@
-from database.database import Base
 from sqlalchemy import Column, Integer, LargeBinary, String
+from sqlalchemy.ext.declarative import declarative_base
 
-class AD(Base):
+AD_base = declarative_base()
+
+class AD(AD_base):
     __tablename__ = 'AnimatedDrawings'
 
     id = Column(Integer, primary_key=True)
