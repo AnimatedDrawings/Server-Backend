@@ -1,12 +1,12 @@
 from sqlalchemy import create_engine
-from sqlalchemy.ext.declarative import declarative_base
-from sqlalchemy.orm import sessionmaker
+from sqlalchemy.orm import scoped_session, sessionmaker
 
-SQLALCHEMY_DATABASE_URL = "sqlite:///./database/addb.db"
+from sqlalchemy import text
 
-engine = create_engine(
-    SQLALCHEMY_DATABASE_URL, connect_args={"check_same_thread": False}
-)
-SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
+ad_db_url = 'postgresql+psycopg2://user:password@localhost:5432/ad_db'
+engine = create_engine(ad_db_url)
 
-Base = declarative_base()
+db = scoped_session(sessionmaker(bind=engine))
+
+result = db.execute(text("SELECT 1"))
+print(result.fetchone())
