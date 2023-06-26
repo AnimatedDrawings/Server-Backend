@@ -2,7 +2,7 @@ from fastapi import FastAPI
 import uvicorn
 import httpx
 
-from domain.AD import AD_router
+from api.make_AD import router
 
 from starlette.exceptions import HTTPException
 from fastapi.exceptions import RequestValidationError
@@ -46,7 +46,7 @@ async def get_animated_drawings():
         response = await client.get(url = ad_url.add_path(['get_animated_drawings']), timeout=timeout)
         return response.text
 
-app.include_router(AD_router.router)
+app.include_router(router.router)
 
 if __name__ == '__main__':
     uvicorn.run('main:app', host='0.0.0.0', port=8000, reload=True)
