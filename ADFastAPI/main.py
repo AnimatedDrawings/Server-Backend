@@ -50,22 +50,3 @@ app.include_router(router.router)
 
 if __name__ == '__main__':
     uvicorn.run('main:app', host='0.0.0.0', port=8000, reload=True)
-
-
-
-# def AD_list():
-#     db = SessionLocal()
-#     result = db.query(AD).all()
-#     len_list = len(result)
-#     db.close()
-#     return len_list
-
-
-# import os
-# os.chdir('/home/minii/AnimatedDrawings/Server-Backend/ADFastAPI')
-
-# from database.database import SessionLocal
-# db = SessionLocal()
-
-# from database.models import AD
-# result = db.query(AD).all()
