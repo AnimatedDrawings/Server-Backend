@@ -6,8 +6,8 @@ from api.make_AD import router
 
 from starlette.exceptions import HTTPException
 from fastapi.exceptions import RequestValidationError
-from error.exception_handlers import request_validation_exception_handler, http_exception_handler, unhandled_exception_handler
-from error.middleware import log_request_middleware
+from error_handling.exception_handlers import request_validation_exception_handler, http_exception_handler, unhandled_exception_handler
+from error_handling.middleware import log_request_middleware
 
 app = FastAPI()
 timeout = httpx.Timeout(5, read=None)
