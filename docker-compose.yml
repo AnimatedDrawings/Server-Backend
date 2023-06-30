@@ -49,4 +49,5 @@ services:
       - 8000:8000
     volumes:
       - ./ADFastAPI:/mycode/ADFastAPI
+      - /mnt/sdb1/ad_db/files:/mycode/files
     entrypoint: python /mycode/ADFastAPI/main.py

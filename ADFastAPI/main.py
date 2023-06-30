@@ -2,12 +2,12 @@ from fastapi import FastAPI
 import uvicorn
 import httpx
 
-from api.make_AD import router
+from api import makeAD
 
 from starlette.exceptions import HTTPException
 from fastapi.exceptions import RequestValidationError
-from error.exception_handlers import request_validation_exception_handler, http_exception_handler, unhandled_exception_handler
-from error.middleware import log_request_middleware
+from error_handling.exception_handlers import request_validation_exception_handler, http_exception_handler, unhandled_exception_handler
+from error_handling.middleware import log_request_middleware
 
 app = FastAPI()
 timeout = httpx.Timeout(5, read=None)
@@ -40,13 +40,13 @@ async def test_docker_network():
         response = await client.get(url = ad_url.add_path(['ping']))
         return response.text
 
-@app.get('/get_animated_drawings')
-async def get_animated_drawings():
-    async with httpx.AsyncClient() as client:
-        response = await client.get(url = ad_url.add_path(['get_animated_drawings']), timeout=timeout)
-        return response.text
+# @app.get('/get_animated_drawings')
+# async def get_animated_drawings():
+#     async with httpx.AsyncClient() as client:
+#         response = await client.get(url = ad_url.add_path(['get_animated_drawings']), timeout=timeout)
+#         return response.text
 
-app.include_router(router.router)
+app.include_router(makeAD.router)
 
 if __name__ == '__main__':
     uvicorn.run('main:app', host='0.0.0.0', port=8000, reload=True)
