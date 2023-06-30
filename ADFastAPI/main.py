@@ -40,11 +40,11 @@ async def test_docker_network():
         response = await client.get(url = ad_url.add_path(['ping']))
         return response.text
 
-@app.get('/get_animated_drawings')
-async def get_animated_drawings():
-    async with httpx.AsyncClient() as client:
-        response = await client.get(url = ad_url.add_path(['get_animated_drawings']), timeout=timeout)
-        return response.text
+# @app.get('/get_animated_drawings')
+# async def get_animated_drawings():
+#     async with httpx.AsyncClient() as client:
+#         response = await client.get(url = ad_url.add_path(['get_animated_drawings']), timeout=timeout)
+#         return response.text
 
 app.include_router(makeAD.router)
 

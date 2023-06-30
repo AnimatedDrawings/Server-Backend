@@ -10,6 +10,7 @@ from path import Path
 
 from fastapi import UploadFile, File
 from datetime import datetime
+from uuid import uuid4
 
 router = APIRouter(
     prefix='/api/makeAD',
@@ -25,17 +26,16 @@ FILES_IN_DOCKER = Path('/mycode/files/')
 CROPPED_IMAGES = ''.join([FILES_IN_DOCKER, 'cropped_images/'])
 
 @router.post('/upload_image')
-async def upload_image(file: UploadFile = File(...)):
-    saved_file_name = datetime.now().strftime("%Y%m%d%H%M%S")
+def upload_image(file: UploadFile = File(...)):
+    saved_file_name = uuid4().hex + '_' + datetime.now().strftime("%Y%m%d%H%M%S")
     file_location = CROPPED_IMAGES + saved_file_name
     file_url = FILES_IN_LOCAL + 'cropped_images/' + saved_file_name
 
     with open(file_location, 'wb') as image:
-        content = await file.read()
-        image.write(content)
+        image.write(file.file.read())
         image.close()
 
-    return file_url
+    return saved_file_name
 
 @router.get('/files/cropped_images/{name_file}')
 def get_cropped_image(name_file: str):
