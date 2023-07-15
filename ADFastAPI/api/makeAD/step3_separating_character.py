@@ -13,7 +13,7 @@ from datetime import datetime
 from uuid import uuid4
 
 router = APIRouter(
-    prefix='/api/makeAD',
+    prefix='/api/makeAD/step3',
 )
 
 # @router.get('/list', response_model=list[AD_schema])
@@ -23,13 +23,13 @@ router = APIRouter(
 
 FILES_IN_LOCAL = '/mnt/sdb1/ad_db/files/'
 FILES_IN_DOCKER = Path('/mycode/files/')
-CROPPED_IMAGES = ''.join([FILES_IN_DOCKER, 'cropped_images/'])
+MASKED_IMAGES = ''.join([FILES_IN_DOCKER, 'masked_images/'])
 
-@router.post('/upload_image')
+@router.post('/upload_masked_image')
 def upload_image(file: UploadFile = File(...)):
-    saved_file_name = uuid4().hex + '_' + datetime.now().strftime("%Y%m%d%H%M%S")
-    file_location = CROPPED_IMAGES + saved_file_name
-    file_url = FILES_IN_LOCAL + 'cropped_images/' + saved_file_name
+    saved_file_name = uuid4().hex + '_' + datetime.now().strftime("%Y%m%d%H%M%S") + '.png'
+    file_location = MASKED_IMAGES + saved_file_name
+    file_url = FILES_IN_LOCAL + 'masked_images/' + saved_file_name
 
     with open(file_location, 'wb') as image:
         image.write(file.file.read())
@@ -37,8 +37,8 @@ def upload_image(file: UploadFile = File(...)):
 
     return saved_file_name
 
-@router.get('/files/cropped_images/{name_file}')
-def get_cropped_image(name_file: str):
-    file_url = ''.join([CROPPED_IMAGES, name_file])
+@router.get('/files/masked_images/{name_file}')
+def get_masked_image(name_file: str):
+    file_url = ''.join([MASKED_IMAGES, name_file])
     isfile = Path(file_url).isfile()
     return FileResponse(file_url) if isfile else 'Nofile'
