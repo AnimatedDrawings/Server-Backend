@@ -12,6 +12,8 @@ from fastapi import UploadFile, File
 from datetime import datetime
 from uuid import uuid4
 
+import httpx
+
 router = APIRouter(
     prefix='/api/makeAD/step3',
 )
@@ -24,9 +26,10 @@ router = APIRouter(
 FILES_IN_LOCAL = '/mnt/sdb1/ad_db/files/'
 FILES_IN_DOCKER = Path('/mycode/files/')
 MASKED_IMAGES = ''.join([FILES_IN_DOCKER, 'masked_images/'])
+ad_base_url = 'http://animated_drawings:8001'
 
 @router.post('/upload_masked_image')
-def upload_image(file: UploadFile = File(...)):
+async def upload_image(file: UploadFile = File(...)):
     saved_file_name = uuid4().hex + '_' + datetime.now().strftime("%Y%m%d%H%M%S") + '.png'
     file_location = MASKED_IMAGES + saved_file_name
     file_url = FILES_IN_LOCAL + 'masked_images/' + saved_file_name
@@ -34,8 +37,13 @@ def upload_image(file: UploadFile = File(...)):
     with open(file_location, 'wb') as image:
         image.write(file.file.read())
         image.close()
-
-    return saved_file_name
+    
+    tmp_url = ad_base_url + '/image_to_annotations'
+    params = {'file_url' : file_url}
+    async with httpx.AsyncClient() as client:
+        response = await client.get(url = tmp_url, params = params)
+        return response.text
+    
 
 @router.get('/files/masked_images/{name_file}')
 def get_masked_image(name_file: str):
