@@ -26,7 +26,7 @@ services:
   db:
     depends_on:
       - animated_drawings
-    image: postgres:15.3
+    image: postgres:latest
     container_name: ad_db
     restart: always
     environment:

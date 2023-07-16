@@ -28,6 +28,21 @@ FILES_IN_DOCKER = Path('/mycode/files/')
 MASKED_IMAGES = ''.join([FILES_IN_DOCKER, 'masked_images/'])
 ad_base_url = 'http://animated_drawings:8001'
 
+
+'''
+1. [Fast] masked file 로컬 저장
+2. [Fast] masked file_url postgres ad_db에 저장
+3. [AD]
+    1. api_image_to_annotations/?file_url={},
+    2. file_url로 annotation file(char_cfg.yaml) 생성
+    3. annotation file url return
+    [Fast]
+    1. annotation file url postgres ad_db에 저장
+    2. annotation file url -> char_cfg.yaml -> Json 변환후 리턴
+
+시뮬로 간단히 json받는거까지
+'''
+
 @router.post('/upload_masked_image')
 async def upload_image(file: UploadFile = File(...)):
     saved_file_name = uuid4().hex + '_' + datetime.now().strftime("%Y%m%d%H%M%S") + '.png'
@@ -37,6 +52,8 @@ async def upload_image(file: UploadFile = File(...)):
     with open(file_location, 'wb') as image:
         image.write(file.file.read())
         image.close()
+    
+    
     
     tmp_url = ad_base_url + '/image_to_annotations'
     params = {'file_url' : file_url}

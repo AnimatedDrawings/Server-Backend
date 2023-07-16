@@ -7,4 +7,4 @@ class AD_model(AD_base):
     __tablename__ = 'AnimatedDrawings'
 
     id = Column(Integer, primary_key=True)
-    cropped_image_url = Column(String, nullable=True)
+    masked_image_url = Column(String, nullable=True)
