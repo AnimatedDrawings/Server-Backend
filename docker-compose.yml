@@ -21,12 +21,13 @@ services:
       - 8001
     volumes:
       - ./AnimatedDrawings:/mycode/AnimatedDrawings
+      - /mnt/sdb1/ad_db/files:/mycode/files
     entrypoint: conda run --no-capture-output -n animated_drawings python -u animated_drawings_api.py
   
   db:
     depends_on:
       - animated_drawings
-    image: postgres:15.3
+    image: postgres:latest
     container_name: ad_db
     restart: always
     environment:
