@@ -2,7 +2,7 @@ from fastapi import FastAPI
 import uvicorn
 import httpx
 
-from api.makeAD import step3_separating_character
+from api.make_ad import step3_separating_character
 
 from starlette.exceptions import HTTPException
 from fastapi.exceptions import RequestValidationError

@@ -21,6 +21,7 @@ services:
       - 8001
     volumes:
       - ./AnimatedDrawings:/mycode/AnimatedDrawings
+      - /mnt/sdb1/ad_db/files:/mycode/files
     entrypoint: conda run --no-capture-output -n animated_drawings python -u animated_drawings_api.py
   
   db:
