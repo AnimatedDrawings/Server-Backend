@@ -38,4 +38,4 @@ RUN conda init bash \
     && conda install -c conda-forge libstdcxx-ng \
     && conda install cmake
 
-WORKDIR /mycode/AnimatedDrawings/rest_api
+WORKDIR /mycode/AnimatedDrawings/
