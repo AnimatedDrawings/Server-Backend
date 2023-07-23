@@ -13,7 +13,7 @@ import httpx
 import yaml
 
 router = APIRouter(
-    prefix='/api/makeAD/step3',
+    prefix='/api/make_ad/step3',
 )
 
 FILES_IN_DOCKER = Path('/mycode/files/')

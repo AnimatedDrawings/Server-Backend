@@ -2,7 +2,7 @@ from fastapi import FastAPI
 import uvicorn
 import httpx
 
-from api.make_ad import step3_separating_character
+from api.make_ad import step1, step3
 
 from starlette.exceptions import HTTPException
 from fastapi.exceptions import RequestValidationError
@@ -36,7 +36,8 @@ async def test_docker_network():
 #         response = await client.get(url = ad_url.add_path(['get_animated_drawings']), timeout=timeout)
 #         return response.text
 
-app.include_router(step3_separating_character.router)
+app.include_router(step1.router)
+app.include_router(step3.router)
 
 if __name__ == '__main__':
     uvicorn.run('main:app', host='0.0.0.0', port=8000, reload=True)
