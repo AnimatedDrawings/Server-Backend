@@ -2,12 +2,12 @@ from fastapi import FastAPI
 import uvicorn
 import httpx
 
-from api.make_ad import step1, step3
+from sources.api.make_ad import step1, step3
 
 from starlette.exceptions import HTTPException
 from fastapi.exceptions import RequestValidationError
-from error_handling.exception_handlers import request_validation_exception_handler, http_exception_handler, unhandled_exception_handler
-from error_handling.middleware import log_request_middleware
+from sources.error_handling.exception_handlers import request_validation_exception_handler, http_exception_handler, unhandled_exception_handler
+from sources.error_handling.middleware import log_request_middleware
 
 app = FastAPI()
 timeout = httpx.Timeout(5, read=None)

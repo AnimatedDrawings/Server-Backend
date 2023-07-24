@@ -6,9 +6,6 @@ from path import Path
 from datetime import datetime
 from uuid import uuid4
 
-from database.database import get_db
-from database.models import AD_model
-
 import httpx
 import yaml
 

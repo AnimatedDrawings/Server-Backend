@@ -4,7 +4,7 @@ services:
   torchserve:
     container_name: torchserve
     build:
-      context: ./AnimatedDrawings/torchserve
+      context: ./AnimatedDrawingsAPI/sources/torchserve/
       dockerfile: Dockerfile
     expose:
       - 8080
@@ -16,13 +16,13 @@ services:
     container_name: animated_drawings
     build:
       context: .
-      dockerfile: ./animated_drawings_docker/animated_drawings.Dockerfile
+      dockerfile: ./AnimatedDrawingsAPI/animated_drawings.Dockerfile
     expose:
       - 8001
     volumes:
-      - ./AnimatedDrawings:/mycode/AnimatedDrawings
+      - ./AnimatedDrawingsAPI:/mycode/AnimatedDrawingsAPI
       - /mnt/sdb1/ad_db/files:/mycode/files
-    entrypoint: conda run --no-capture-output -n animated_drawings python -u animated_drawings_api.py
+    entrypoint: conda run --no-capture-output -n animated_drawings python -u /mycode/AnimatedDrawingsAPI/main.py
   
   db:
     depends_on:
@@ -45,7 +45,7 @@ services:
     container_name: ad_fast_api
     build:
       context: .
-      dockerfile: ./ad_fast_api_docker/ad_fast_api.Dockerfile
+      dockerfile: ./ADFastAPI/ad_fast_api.Dockerfile
     ports:
       - 8000:8000
     volumes:

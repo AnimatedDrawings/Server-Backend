@@ -1,5 +1,5 @@
 ## Introduction
-This repo is created to service result of [Animated Drawings](https://github.com/facebookresearch/AnimatedDrawings) to users. So, I add web-app(FastAPI) and docker-compose. You can use initial setting to checkout "initial" branch
+This repo is created to service result of [Animated Drawings](https://github.com/facebookresearch/AnimatedDrawings) to users.
 
 ### Network
 ![dockernetwork](/dockernetworkimg.png)
@@ -8,26 +8,28 @@ This repo is created to service result of [Animated Drawings](https://github.com
 ### Installation
 ``` bash
 # IN CLI
-# clone branch name "initial"
-git clone -b initial https://github.com/AnimatedDrawings/Server-Backend.git
 
-# check current path "Server-Backend/" and continue installation
-cd Server-Backend
+# check current path "Server-Backend/"
+cd Server-Backend/
 
-# clone AnimatedDrawings and add rest_api dependency
+# clone Repo AnimatedDrawings in AnimatedDrawingsAPI/sources/ directory
+git -C AnimatedDrawingsAPI/ clone https://github.com/facebookresearch/AnimatedDrawings.git sources/
+
+### Modify Code
+# AnimatedDrawingsAPI/sources/torchserve/Dockerfile
+# Line : 3
+# FROM continuumio/miniconda3:23.3.1-0 <- add tag
+
 # build docker-compose
-git clone https://github.com/facebookresearch/AnimatedDrawings.git
-cp -R AnimatedDrawings/examples AnimatedDrawings/rest_api
-cp animated_drawings_docker/animated_drawings_api.py AnimatedDrawings/rest_api
 sudo docker-compose up -d
 
 
 # MODIFY CODE
-# AnimatedDrawings/rest_api/image_to_annotations.py, line 51, 85
-# replace localhost -> torchserve
-
 # AnimatedDrawings/animated_drawings/mvc_base_cfg.yaml, line 12
 # USE_MESA: False -> USE_MESA: True
+
+# AnimatedDrawingsAPI/sources/example/image_to_annotations.py, line 51, 85
+# replace localhost -> torchserve
 ```
 
 

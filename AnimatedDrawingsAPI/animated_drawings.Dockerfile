@@ -1,6 +1,6 @@
 FROM --platform=linux/amd64 ubuntu:18.04
 
-ENV PYTHONPATH "${PYTHONPATH}:/mycode/AnimatedDrawings"
+ENV PYTHONPATH "${PYTHONPATH}:/mycode/AnimatedDrawingsAPI"
 ENV PATH="/root/miniconda3/bin:$PATH"
 ARG PATH="/root/miniconda3/bin:$PATH"
 
@@ -28,7 +28,7 @@ RUN wget https://repo.anaconda.com/miniconda/Miniconda3-latest-Linux-x86_64.sh \
 
 # install AnimatedDrawings and fix osmesa error
 WORKDIR /mycode
-COPY /AnimatedDrawings/setup.py .
+COPY /AnimatedDrawingsAPI/sources/setup.py .
 RUN conda init bash \
     && . ~/.bashrc \
     && conda create --name animated_drawings python=3.8.13 \
@@ -37,5 +37,3 @@ RUN conda init bash \
     && export PYOPENGL_PLATFORM=osmesa \
     && conda install -c conda-forge libstdcxx-ng \
     && conda install cmake
-
-WORKDIR /mycode/AnimatedDrawings/
