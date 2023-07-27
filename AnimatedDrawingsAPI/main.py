@@ -60,6 +60,16 @@ def upload_a_drawing():
     bbox = np.array(detection_results[0]['bbox'])
     l, t, r, b = [round(x) for x in bbox]
 
+    # dump the bounding box results to file
+    bouding_box_path = base_path.joinpath('bounding_box.yaml')
+    with open(bouding_box_path.as_posix(), 'w') as f:
+        yaml.dump({
+            'left': l,
+            'top': t,
+            'right': r,
+            'bottom': b
+        }, f)
+
     bounding_box_dict = {
         'left' : l,
         'top' : t,
@@ -77,7 +87,6 @@ def find_the_character():
     if len(request_dict) == 0:
         return 'no request parameter'
     ad_id = request_dict['ad_id']
-    # ad_id = 'df068ccc94844ff7b2b5c44d262d36ee_20230727113944'
     base_path: Path = FILES.joinpath(ad_id)
     
     # crop the image
