@@ -5,6 +5,8 @@ import requests
 import json
 import numpy as np
 import yaml
+from skimage import measure
+from scipy import ndimage
 
 app = Flask(__name__)
 FILES = Path('/mycode/files')
@@ -13,8 +15,8 @@ FILES = Path('/mycode/files')
 def ping():
     return 'animated_drawings test ping success!!'
 
-@app.route('/detect_bounding_box')
-def detect_bounding_box():
+@app.route('/upload_a_drawing')
+def upload_a_drawing():
     request_dict = request.args.to_dict()
     # check request parameter
     if len(request_dict) == 0:
@@ -22,7 +24,7 @@ def detect_bounding_box():
 
     ad_id = request_dict['ad_id']
     base_path: Path = FILES.joinpath(ad_id)
-    file_name = 'original_image.png'
+    file_name = 'image.png'
     img_fn = base_path.joinpath(file_name).as_posix()
 
     # read image
@@ -58,29 +60,105 @@ def detect_bounding_box():
     bbox = np.array(detection_results[0]['bbox'])
     l, t, r, b = [round(x) for x in bbox]
 
-    # dump the bounding box results to file
-
-    bounding_box_location = base_path.joinpath('bounding_box.yaml').as_posix()
-    with open(bounding_box_location, 'w') as f:
-        yaml.dump({
-            'left': l,
-            'top': t,
-            'right': r,
-            'bottom': b
-        }, f)
-
-    # cropped = img[t:b, l:r]
-    tmp_params = {
+    bounding_box_dict = {
         'left' : l,
         'top' : t,
         'right' : r,
         'bottom' : b
     }
-    return tmp_params
+    return bounding_box_dict
 
 
+@app.route('/find_the_character')
+def find_the_character():
+    request_dict = request.args.to_dict()
 
-ANNOTATIONS = '/mycode/files/annotations/'
+    # check request parameter
+    if len(request_dict) == 0:
+        return 'no request parameter'
+    ad_id = request_dict['ad_id']
+    # ad_id = 'df068ccc94844ff7b2b5c44d262d36ee_20230727113944'
+    base_path: Path = FILES.joinpath(ad_id)
+    
+    # crop the image
+    bounding_box_path = base_path.joinpath('bounding_box.yaml')
+    bounding_box_dict = yaml.safe_load(bounding_box_path.read_text())
+    t = int(bounding_box_dict['top'])
+    b = int(bounding_box_dict['bottom'])
+    l = int(bounding_box_dict['left'])
+    r = int(bounding_box_dict['right'])
+    original_image_path = base_path.joinpath('image.png')
+    img = cv2.imread(original_image_path.as_posix())
+    cropped = img[t:b, l:r]
+    cropped_image_path = base_path.joinpath('texture.png')
+    cv2.imwrite(cropped_image_path.as_posix(), cropped)
+
+    # save mask
+    mask_image_path = base_path.joinpath('mask.png')
+    mask = segment(cropped)
+    cv2.imwrite(mask_image_path.as_posix(), mask)
+
+    return { 'ad_id' : ad_id }
+
+
+def segment(img: np.ndarray):
+    """ threshold """
+    img = np.min(img, axis=2)
+    img = cv2.adaptiveThreshold(img, 255, cv2.ADAPTIVE_THRESH_GAUSSIAN_C, cv2.THRESH_BINARY, 115, 8)
+    img = cv2.bitwise_not(img)
+
+    """ morphops """
+    kernel = cv2.getStructuringElement(cv2.MORPH_RECT, (3, 3))
+    img = cv2.morphologyEx(img, cv2.MORPH_CLOSE, kernel, iterations=2)
+    img = cv2.morphologyEx(img, cv2.MORPH_DILATE, kernel, iterations=2)
+
+    """ floodfill """
+    mask = np.zeros([img.shape[0]+2, img.shape[1]+2], np.uint8)
+    mask[1:-1, 1:-1] = img.copy()
+
+    # im_floodfill is results of floodfill. Starts off all white
+    im_floodfill = np.full(img.shape, 255, np.uint8)
+
+    # choose 10 points along each image side. use as seed for floodfill.
+    h, w = img.shape[:2]
+    for x in range(0, w-1, 10):
+        cv2.floodFill(im_floodfill, mask, (x, 0), 0)
+        cv2.floodFill(im_floodfill, mask, (x, h-1), 0)
+    for y in range(0, h-1, 10):
+        cv2.floodFill(im_floodfill, mask, (0, y), 0)
+        cv2.floodFill(im_floodfill, mask, (w-1, y), 0)
+
+    # make sure edges aren't character. necessary for contour finding
+    im_floodfill[0, :] = 0
+    im_floodfill[-1, :] = 0
+    im_floodfill[:, 0] = 0
+    im_floodfill[:, -1] = 0
+
+    """ retain largest contour """
+    mask2 = cv2.bitwise_not(im_floodfill)
+    mask = None
+    biggest = 0
+
+    contours = measure.find_contours(mask2, 0.0)
+    for c in contours:
+        x = np.zeros(mask2.T.shape, np.uint8)
+        cv2.fillPoly(x, [np.int32(c)], 1)
+        size = len(np.where(x == 1)[0])
+        if size > biggest:
+            mask = x
+            biggest = size
+
+    # if mask is None:
+    #     msg = 'Found no contours within image'
+    #     logging.critical(msg)
+    #     assert False, msg
+
+    mask = ndimage.binary_fill_holes(mask).astype(int)
+    mask = 255 * mask.astype(np.uint8)
+
+    return mask.T
+
+
 
 '''
 1. [Fast] masked file 로컬 저장

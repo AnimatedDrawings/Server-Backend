@@ -11,24 +11,21 @@ router = APIRouter(
 FILES_IN_DOCKER = Path('/mycode/files/')
 AD_BASEURL = 'http://animated_drawings:8001/'
 
-@router.post('/upload_drawing')
-async def upload_drawing(file: UploadFile = File(...)):
-    extension = '.png'
+@router.post('/upload_a_drawing')
+async def upload_a_drawing(file: UploadFile = File(...)):
     ad_id = uuid4().hex + '_' + datetime.now().strftime("%Y%m%d%H%M%S")
     base_path: Path = FILES_IN_DOCKER.joinpath(ad_id)
     base_path.mkdir()
-    img_str = 'original_image'
-    saved_file_name = img_str + extension
-    file_location = str(base_path.joinpath(saved_file_name))
+    original_image_path = base_path.joinpath('image.png')
 
-    with open(file_location, 'wb') as image:
+    with open(original_image_path.as_posix(), 'wb') as image:
         image.write(file.file.read())
         image.close()
 
-    detect_bounding_box_url = AD_BASEURL + 'detect_bounding_box'
+    ad_url = AD_BASEURL + 'upload_a_drawing'
     params = { 'ad_id' : ad_id }
     async with httpx.AsyncClient() as client:
-        response = await client.get(url = detect_bounding_box_url, params = params)
+        response = await client.get(url = ad_url, params = params)
         try:
             bounding_box_dict = response.json()
             result = { 'ad_id' : ad_id, 'bounding_box' : bounding_box_dict }
