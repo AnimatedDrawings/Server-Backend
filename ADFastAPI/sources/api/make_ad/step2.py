@@ -33,9 +33,8 @@ async def find_the_character(ad_id: str, bounding_box: BoundingBox):
     async with httpx.AsyncClient() as client:
         response = await client.get(url = ad_url, params = params)
         try:
-            return "success.."
-            # bounding_box_dict = response.json()
-            # result = { 'ad_id' : ad_id, 'bounding_box' : bounding_box_dict }
-            # return result
+            bounding_box_dict = response.json()
+            result = { 'ad_id' : ad_id }
+            return result
         except:
             return response.text
