@@ -1,4 +1,5 @@
-from fastapi import APIRouter, Header
+from fastapi import APIRouter
+from fastapi.responses import FileResponse
 from pathlib import Path
 import httpx
 from pydantic import BaseModel
@@ -33,8 +34,12 @@ async def find_the_character(ad_id: str, bounding_box: BoundingBox):
     async with httpx.AsyncClient() as client:
         response = await client.get(url = ad_url, params = params)
         try:
-            bounding_box_dict = response.json()
-            result = { 'ad_id' : ad_id }
-            return result
+            return response.json()
         except:
             return response.text
+
+@router.get('/download_mask_image/{ad_id}')
+def download_mask_image(ad_id: str):
+    base_path: Path = FILES_IN_DOCKER.joinpath(ad_id)
+    mask_image_path = base_path.joinpath('mask.png')
+    return FileResponse(mask_image_path.as_posix())

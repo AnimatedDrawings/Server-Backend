@@ -107,7 +107,7 @@ def find_the_character():
     mask = segment(cropped)
     cv2.imwrite(mask_image_path.as_posix(), mask)
 
-    return { 'ad_id' : ad_id }
+    return { 'is_success' : True }
 
 
 def segment(img: np.ndarray):
