@@ -41,5 +41,5 @@ async def find_the_character(ad_id: str, bounding_box: BoundingBox):
 @router.get('/download_mask_image/{ad_id}')
 def download_mask_image(ad_id: str):
     base_path: Path = FILES_IN_DOCKER.joinpath(ad_id)
-    mask_image_path = base_path.joinpath('mask.png')
+    mask_image_path = base_path.joinpath('masked_img.png')
     return FileResponse(mask_image_path.as_posix())

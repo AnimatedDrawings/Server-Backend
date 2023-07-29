@@ -107,7 +107,80 @@ def find_the_character():
     mask = segment(cropped)
     cv2.imwrite(mask_image_path.as_posix(), mask)
 
+    # create masked_image(texture + mask)
+    masked_img = cropped.copy()
+    masked_img = cv2.cvtColor(masked_img, cv2.COLOR_BGR2BGRA)
+    masked_img[:, :, 3] = mask
+    masked_image_path = base_path.joinpath('masked_img.png')
+    cv2.imwrite(masked_image_path.as_posix(), masked_img)
+
     return { 'is_success' : True }
+
+
+@app.route('/separate_character')
+def separate_character():
+    request_dict = request.args.to_dict()
+    # check request parameter
+    if len(request_dict) == 0:
+        return 'no request parameter'
+    ad_id = request_dict['ad_id']
+    base_path: Path = FILES.joinpath(ad_id)
+
+    # read cropped
+    cropped_path = base_path.joinpath('texture.png')
+    cropped = cv2.imread(cropped_path.as_posix())
+    # send cropped image to pose estimator
+    data_file = {'data': cv2.imencode('.png', cropped)[1].tobytes()}
+    resp = requests.post("http://torchserve:8080/predictions/drawn_humanoid_pose_estimator", files=data_file, verify=False)
+    if resp is None or resp.status_code >= 300:
+        return f"Failed to get skeletons, please check if the 'docker_torchserve' is running and healthy, resp: {resp}"
+
+    pose_results = json.loads(resp.content)
+
+    # error check pose_results
+    if type(pose_results) == dict and 'code' in pose_results.keys() and pose_results['code'] == 404:
+        return f'Error performing pose estimation. Check that drawn_humanoid_pose_estimator.mar was properly downloaded. Response: {pose_results}'
+    
+    # if more than one skeleton detected, abort
+    if len(pose_results) == 0:
+        msg = 'Could not detect any skeletons within the character bounding box. Expected exactly 1. Aborting.'
+        return msg
+    
+    # if more than one skeleton detected,
+    if 1 < len(pose_results):
+        msg = f'Detected {len(pose_results)} skeletons with the character bounding box. Expected exactly 1. Aborting.'
+        return msg
+    
+    # get x y coordinates of detection joint keypoints
+    kpts = np.array(pose_results[0]['keypoints'])[:, :2]
+
+    # use them to build character skeleton rig
+    skeleton = []
+    skeleton.append({'loc' : [round(x) for x in (kpts[11]+kpts[12])/2], 'name': 'root'          , 'parent': None})
+    skeleton.append({'loc' : [round(x) for x in (kpts[11]+kpts[12])/2], 'name': 'hip'           , 'parent': 'root'})
+    skeleton.append({'loc' : [round(x) for x in (kpts[5]+kpts[6])/2  ], 'name': 'torso'         , 'parent': 'hip'})
+    skeleton.append({'loc' : [round(x) for x in  kpts[0]             ], 'name': 'neck'          , 'parent': 'torso'})
+    skeleton.append({'loc' : [round(x) for x in  kpts[6]             ], 'name': 'right_shoulder', 'parent': 'torso'})
+    skeleton.append({'loc' : [round(x) for x in  kpts[8]             ], 'name': 'right_elbow'   , 'parent': 'right_shoulder'})
+    skeleton.append({'loc' : [round(x) for x in  kpts[10]            ], 'name': 'right_hand'    , 'parent': 'right_elbow'})
+    skeleton.append({'loc' : [round(x) for x in  kpts[5]             ], 'name': 'left_shoulder' , 'parent': 'torso'})
+    skeleton.append({'loc' : [round(x) for x in  kpts[7]             ], 'name': 'left_elbow'    , 'parent': 'left_shoulder'})
+    skeleton.append({'loc' : [round(x) for x in  kpts[9]             ], 'name': 'left_hand'     , 'parent': 'left_elbow'})
+    skeleton.append({'loc' : [round(x) for x in  kpts[12]            ], 'name': 'right_hip'     , 'parent': 'root'})
+    skeleton.append({'loc' : [round(x) for x in  kpts[14]            ], 'name': 'right_knee'    , 'parent': 'right_hip'})
+    skeleton.append({'loc' : [round(x) for x in  kpts[16]            ], 'name': 'right_foot'    , 'parent': 'right_knee'})
+    skeleton.append({'loc' : [round(x) for x in  kpts[11]            ], 'name': 'left_hip'      , 'parent': 'root'})
+    skeleton.append({'loc' : [round(x) for x in  kpts[13]            ], 'name': 'left_knee'     , 'parent': 'left_hip'})
+    skeleton.append({'loc' : [round(x) for x in  kpts[15]            ], 'name': 'left_foot'     , 'parent': 'left_knee'})
+
+    # create the character config dictionary
+    char_cfg = {'skeleton': skeleton, 'height': cropped.shape[0], 'width': cropped.shape[1]}
+    char_cfg_path = base_path.joinpath('char_cfg.yaml')
+    # dump character config to yaml
+    with open(char_cfg_path.as_posix(), 'w') as f:
+        yaml.dump(char_cfg, f)
+
+    return { 'ad_id' : ad_id }
 
 
 def segment(img: np.ndarray):
@@ -157,48 +230,14 @@ def segment(img: np.ndarray):
             mask = x
             biggest = size
 
-    # if mask is None:
-    #     msg = 'Found no contours within image'
-    #     logging.critical(msg)
-    #     assert False, msg
+    if mask is None:
+        msg = 'Found no contours within image'
+        assert False, msg
 
     mask = ndimage.binary_fill_holes(mask).astype(int)
     mask = 255 * mask.astype(np.uint8)
 
     return mask.T
-
-
-
-'''
-1. [Fast] masked file 로컬 저장
-2. [Fast] masked file_location postgres ad_db에 저장
-3. [AD]
-    1. image_to_annotations/
-    2. masked_file_url로 annotation file(char_cfg.yaml) 생성
-    3. annotation file url return
-    [Fast]
-    1. annotation file url postgres ad_db에 저장
-    2. annotation file url -> char_cfg.yaml -> Json 변환후 리턴
-'''
-# @app.route('/image_to_annotations')
-# def api_image_to_annotations():
-#     parameter_dict = request.args.to_dict()
-#     if len(parameter_dict) == 0:
-#         return 'No parameter'
-
-#     path = parameter_dict['path']
-#     file_name = parameter_dict['file_name']
-#     extension = parameter_dict['extension']
-#     img_fn = path + file_name + extension
-#     out_dir = ANNOTATIONS + file_name
-#     image_to_annotations(img_fn = img_fn, out_dir = out_dir)
-
-#     annotation_info = {
-#         'path' : ANNOTATIONS + file_name + '/',
-#         'joint_filename' : 'char_cfg.yaml'
-#     }
-
-#     return annotation_info
 
 if __name__ == '__main__':
     app.run(debug=True, host='0.0.0.0', port='8001')
