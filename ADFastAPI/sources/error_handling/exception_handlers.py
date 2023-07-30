@@ -12,7 +12,7 @@ from fastapi.responses import JSONResponse
 from fastapi.responses import PlainTextResponse
 from fastapi.responses import Response
 
-from error_handling.logger import logger
+from sources.error_handling.logger import logger
 
 async def request_validation_exception_handler(request: Request, exc: RequestValidationError) -> JSONResponse:
     """
