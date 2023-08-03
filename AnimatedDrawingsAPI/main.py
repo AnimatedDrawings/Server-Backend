@@ -245,6 +245,8 @@ def segment(img: np.ndarray):
     return mask.T
 
 
+ad_animation_name_set = ['dab', 'zombie']
+
 @app.route('/add_animation')
 def add_animation():
     request_dict = request.args.to_dict()
@@ -252,7 +254,15 @@ def add_animation():
     if len(request_dict) == 0:
         return 'no request parameter'
     ad_id = request_dict['ad_id']
+    ad_animation_name = request_dict['ad_animation_name']
+
+    if ad_animation_name not in ad_animation_name_set:
+        return 'no ad animation name'
+    
     file_path: Path = FILES.joinpath(ad_id)
+    output_video_path: Path = file_path.joinpath(f'{ad_animation_name}.gif')
+    if output_video_path.exists():
+        return 'exist file'
 
     """
     Given a path to a directory with character annotations, a motion configuration file, and a retarget configuration file,
@@ -260,7 +270,7 @@ def add_animation():
     """
     # package character_cfg_fn, motion_cfg_fn, and retarget_cfg_fn
     char_cfg_path = file_path.joinpath('char_cfg.yaml')
-    motion_cfg_path = SOURCES.joinpath('examples/config/motion/dab.yaml')
+    motion_cfg_path = SOURCES.joinpath(f'examples/config/motion/{ad_animation_name}.yaml')
     retarget_cfg_path = SOURCES.joinpath('examples/config/retarget/fair1_ppf.yaml')
     animated_drawing_dict = {
         'character_cfg': char_cfg_path.as_posix(),
@@ -269,7 +279,6 @@ def add_animation():
     }
 
     # create mvc config
-    output_video_path = file_path.joinpath('video.gif')
     mvc_cfg = {
         'scene': {'ANIMATED_CHARACTERS': [animated_drawing_dict]},  # add the character to the scene
         'controller': {
