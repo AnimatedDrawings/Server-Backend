@@ -10,6 +10,11 @@ from scipy import ndimage
 
 app = Flask(__name__)
 FILES = Path('/mycode/files')
+SOURCES = Path('/mycode/AnimatedDrawingsAPI/sources')
+
+import sys
+sys.path.append(SOURCES.as_posix())
+import animated_drawings.render
 
 @app.route('/ping')
 def ping():
@@ -238,6 +243,51 @@ def segment(img: np.ndarray):
     mask = 255 * mask.astype(np.uint8)
 
     return mask.T
+
+
+@app.route('/add_animation')
+def add_animation():
+    request_dict = request.args.to_dict()
+    # check request parameter
+    if len(request_dict) == 0:
+        return 'no request parameter'
+    ad_id = request_dict['ad_id']
+    file_path: Path = FILES.joinpath(ad_id)
+
+    """
+    Given a path to a directory with character annotations, a motion configuration file, and a retarget configuration file,
+    creates an animation and saves it to {annotation_dir}/video.png
+    """
+    # package character_cfg_fn, motion_cfg_fn, and retarget_cfg_fn
+    char_cfg_path = file_path.joinpath('char_cfg.yaml')
+    motion_cfg_path = SOURCES.joinpath('examples/config/motion/dab.yaml')
+    retarget_cfg_path = SOURCES.joinpath('examples/config/retarget/fair1_ppf.yaml')
+    animated_drawing_dict = {
+        'character_cfg': char_cfg_path.as_posix(),
+        'motion_cfg': motion_cfg_path.as_posix(),
+        'retarget_cfg': retarget_cfg_path.as_posix()
+    }
+
+    # create mvc config
+    output_video_path = file_path.joinpath('video.gif')
+    mvc_cfg = {
+        'scene': {'ANIMATED_CHARACTERS': [animated_drawing_dict]},  # add the character to the scene
+        'controller': {
+            'MODE': 'video_render',  # 'video_render' or 'interactive'
+            'OUTPUT_VIDEO_PATH': output_video_path.as_posix() # set the output location
+            }
+    }
+
+    # write the new mvc config file out
+    output_mvc_cfg_path = file_path.joinpath('mvc_cfg.yaml')
+    with open(output_mvc_cfg_path.as_posix(), 'w') as f:
+        yaml.dump(dict(mvc_cfg), f)
+
+    # render the video
+    animated_drawings.render.start(output_mvc_cfg_path.as_posix())
+
+    return { 'ad_id' : ad_id }
+
 
 if __name__ == '__main__':
     app.run(debug=True, host='0.0.0.0', port='8001')

@@ -31,5 +31,5 @@ async def find_character_joints(ad_id: str, joints: Joints):
     with open(char_cfg_path.as_posix(), 'w') as f:
         yaml.dump(joints_dict, f)
 
-    return { 'ad_id' : ad_id, 'joints' : joints.dict() }
+    return { 'ad_id' : ad_id }
         
