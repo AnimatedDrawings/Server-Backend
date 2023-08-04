@@ -1,14 +1,5 @@
 from fastapi import APIRouter, UploadFile, File
-from fastapi.responses import FileResponse
-
 from pathlib import Path
-
-from datetime import datetime
-from uuid import uuid4
-
-from sources.database.database import get_db
-from sources.database.models import AD_model
-
 import httpx
 import yaml
 

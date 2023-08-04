@@ -2,7 +2,8 @@ from fastapi import FastAPI
 import uvicorn
 import httpx
 
-from sources.api.make_ad import step1, step2, step3
+from sources.api.make_ad import step1, step2, step3, step4
+from sources.api import configure_animation
 
 from starlette.exceptions import HTTPException
 from fastapi.exceptions import RequestValidationError
@@ -32,6 +33,8 @@ async def test_docker_network():
 app.include_router(step1.router)
 app.include_router(step2.router)
 app.include_router(step3.router)
+app.include_router(step4.router)
+app.include_router(configure_animation.router)
 
 if __name__ == '__main__':
     uvicorn.run('main:app', host='0.0.0.0', port=8000, reload=True)
