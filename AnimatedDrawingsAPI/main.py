@@ -245,8 +245,6 @@ def segment(img: np.ndarray):
     return mask.T
 
 
-ad_animation_name_set = ['dab', 'zombie']
-
 @app.route('/add_animation')
 def add_animation():
     request_dict = request.args.to_dict()
@@ -255,12 +253,11 @@ def add_animation():
         return 'no request parameter'
     ad_id = request_dict['ad_id']
     ad_animation_name = request_dict['ad_animation_name']
-
-    if ad_animation_name not in ad_animation_name_set:
-        return 'no ad animation name'
     
     file_path: Path = FILES.joinpath(ad_id)
-    output_video_path: Path = file_path.joinpath(f'{ad_animation_name}.gif')
+    video_path = file_path.joinpath('video')
+    video_path.mkdir(exist_ok = True)
+    output_video_path: Path = video_path.joinpath(f'{ad_animation_name}.gif')
     if output_video_path.exists():
         return 'exist file'
 
