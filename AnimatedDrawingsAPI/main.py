@@ -1,4 +1,4 @@
-from flask import Flask, send_file, request
+from flask import Flask, request
 import cv2
 from pathlib import Path
 import requests
@@ -7,6 +7,8 @@ import numpy as np
 import yaml
 from skimage import measure
 from scipy import ndimage
+
+import logging
 
 app = Flask(__name__)
 FILES = Path('/mycode/files')
@@ -20,14 +22,29 @@ import animated_drawings.render
 def ping():
     return 'animated_drawings test ping success!!'
 
+
+def fail(msg: str) -> dict:
+    return {
+        'is_success' : False,
+        'msg' : msg
+    }
+
+def success() -> dict:
+    return {
+        'is_success' : True,
+        'msg' : ''
+    }
+
+
 @app.route('/upload_a_drawing')
 def upload_a_drawing():
-    request_dict = request.args.to_dict()
     # check request parameter
-    if len(request_dict) == 0:
-        return 'no request parameter'
+    request_dict = request.args.to_dict()
+    key_ad_id = 'ad_id'
+    if key_ad_id not in request_dict:
+        return fail(msg='no request parameter')
 
-    ad_id = request_dict['ad_id']
+    ad_id = request_dict[key_ad_id]
     base_path: Path = FILES.joinpath(ad_id)
     file_name = 'image.png'
     img_fn = base_path.joinpath(file_name).as_posix()
@@ -37,29 +54,37 @@ def upload_a_drawing():
 
     # ensure it's rgb
     if len(img.shape) != 3:
-        return 'image is not rgb'
+        msg = f'image must have 3 channels (rgb). Found {len(img.shape)}'
+        return fail(msg=msg)
     
     # convert to bytes and send to torchserve
     img_b = cv2.imencode('.png', img)[1].tobytes()
     request_data = {'data': img_b}
     resp = requests.post("http://torchserve:8080/predictions/drawn_humanoid_detector", files=request_data, verify=False)
-
     if resp is None or resp.status_code >= 300:
-        return 'torchserve connection error : bounding box' 
+        msg = f"Failed to get bounding box, please check if the 'docker_torchserve' is running and healthy, resp: {resp}"
+        return fail(msg=msg)
 
     detection_results = json.loads(resp.content)
 
     # error check detection_results
     if type(detection_results) == dict and 'code' in detection_results.keys() and detection_results['code'] == 404:
-        msg = 'Error performing detection. Check that drawn_humanoid_detector.mar was properly downloaded. Response: {detection_results}'
-        return msg
+        msg = f'Error performing detection. Check that drawn_humanoid_detector.mar was properly downloaded. Response: {detection_results}'
+        return fail(msg=msg)
 
     # order results by score, descending
     detection_results.sort(key=lambda x: x['score'], reverse=True)
+
     # if no drawn humanoids detected, abort
     if len(detection_results) == 0:
         msg = 'Could not detect any drawn humanoids in the image. Aborting'
-        return msg
+        return fail(msg=msg)
+
+    # otherwise, report # detected and score of highest.
+    log_file_path = base_path.joinpath('logs/log.txt')
+    logging.basicConfig(filename=log_file_path.as_posix(), level=logging.DEBUG)
+    msg = f'Detected {len(detection_results)} humanoids in image. Using detection with highest score {detection_results[0]["score"]}.'
+    logging.info(msg)
     
     # calculate the coordinates of the character bounding box
     bbox = np.array(detection_results[0]['bbox'])
@@ -75,13 +100,15 @@ def upload_a_drawing():
             'bottom': b
         }, f)
 
-    bounding_box_dict = {
-        'left' : l,
-        'top' : t,
-        'right' : r,
-        'bottom' : b
-    }
-    return bounding_box_dict
+    return success()
+
+    # bounding_box_dict = {
+    #     'left' : l,
+    #     'top' : t,
+    #     'right' : r,
+    #     'bottom' : b
+    # }
+    # return bounding_box_dict
 
 
 @app.route('/find_the_character')
