@@ -23,25 +23,10 @@ services:
       - ./AnimatedDrawingsAPI:/mycode/AnimatedDrawingsAPI
       - /mnt/sdb1/ad_db/files:/mycode/files
     entrypoint: conda run --no-capture-output -n animated_drawings python -u /mycode/AnimatedDrawingsAPI/main.py
-  
-  db:
-    depends_on:
-      - animated_drawings
-    image: postgres:latest
-    container_name: ad_db
-    restart: always
-    environment:
-      POSTGRES_DB: ad_db
-      POSTGRES_USER: user
-      POSTGRES_PASSWORD: password
-    ports:
-      - 5432:5432
-    volumes:
-      - /mnt/sdb1/ad_db/postgres:/var/lib/postgresql/data
 
   ad_fast_api:
     depends_on:
-      - db
+      - animated_drawings
     container_name: ad_fast_api
     build:
       context: .
