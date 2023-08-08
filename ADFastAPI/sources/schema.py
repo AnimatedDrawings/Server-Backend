@@ -2,8 +2,15 @@ from pydantic import BaseModel
 
 class DefaultResponse(BaseModel):
     is_success: bool = True
-    msg: str = ''
+    message: str = ''
     response: BaseModel | None = None
+    
+    def success(self, response: BaseModel | None = None):
+        self.response = response
+    
+    def fail(self, message: str):
+        self.is_success = False
+        self.message = message
 
 class BoundingBox(BaseModel):
     top: int = 0

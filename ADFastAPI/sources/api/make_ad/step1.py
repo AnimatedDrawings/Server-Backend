@@ -27,6 +27,7 @@ async def upload_a_drawing(file: UploadFile = File(...)):
     log_path = base_path.joinpath('logs')
     log_path.mkdir()
     log_file_path = log_path.joinpath('log.txt')
+    log_file_path.touch()
     logging.basicConfig(filename = log_file_path.as_posix(), level = logging.DEBUG)
 
     original_image_path = base_path.joinpath('image.png')
@@ -37,8 +38,8 @@ async def upload_a_drawing(file: UploadFile = File(...)):
 
     ad_url = AD_BASEURL + 'upload_a_drawing'
     params = { 'ad_id' : ad_id }
-    my_response = UploadADrawingResponse(ad_id=ad_id, bounding_box=BoundingBox())
-
+    default_response = DefaultResponse()
+    
     async with httpx.AsyncClient() as client:
         response = await client.get(url = ad_url, params = params)
         response_dict = response.json()
@@ -48,9 +49,13 @@ async def upload_a_drawing(file: UploadFile = File(...)):
             with open(bounding_box_path.as_posix(), encoding='UTF-8') as bounding_box_yaml:
                 bounding_box_dict = yaml.load(bounding_box_yaml, Loader=yaml.FullLoader)
                 bouding_box = BoundingBox.parse_obj(bounding_box_dict)
+                my_response = UploadADrawingResponse(ad_id=ad_id, bounding_box=BoundingBox())
                 my_response.bounding_box = bouding_box
-                return DefaultResponse(response = my_response).dict()
+                default_response.success(response = my_response) 
+                return default_response.dict()
         else:
             msg = response_dict['msg']
-            return DefaultResponse(is_success=False, msg=msg, response=my_response).dict()
+            logging.critical(msg=msg)
+            default_response.fail(message = msg)
+            return default_response.dict()
 

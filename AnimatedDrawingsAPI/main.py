@@ -102,22 +102,15 @@ def upload_a_drawing():
 
     return success()
 
-    # bounding_box_dict = {
-    #     'left' : l,
-    #     'top' : t,
-    #     'right' : r,
-    #     'bottom' : b
-    # }
-    # return bounding_box_dict
-
 
 @app.route('/find_the_character')
 def find_the_character():
-    request_dict = request.args.to_dict()
-
     # check request parameter
-    if len(request_dict) == 0:
-        return 'no request parameter'
+    request_dict = request.args.to_dict()
+    key_ad_id = 'ad_id'
+    if key_ad_id not in request_dict:
+        return fail(msg='no request parameter')
+
     ad_id = request_dict['ad_id']
     base_path: Path = FILES.joinpath(ad_id)
     
@@ -136,7 +129,10 @@ def find_the_character():
 
     # save mask
     mask_image_path = base_path.joinpath('mask.png')
-    mask = segment(cropped)
+    try:
+        mask = segment(cropped)
+    except:
+        return fail('Found no contours within image')
     cv2.imwrite(mask_image_path.as_posix(), mask)
 
     # create masked_image(texture + mask)
@@ -146,7 +142,7 @@ def find_the_character():
     masked_image_path = base_path.joinpath('masked_img.png')
     cv2.imwrite(masked_image_path.as_posix(), masked_img)
 
-    return { 'is_success' : True }
+    return success()
 
 
 @app.route('/separate_character')
@@ -263,8 +259,7 @@ def segment(img: np.ndarray):
             biggest = size
 
     if mask is None:
-        msg = 'Found no contours within image'
-        assert False, msg
+        assert False, 'Found no contours within image'
 
     mask = ndimage.binary_fill_holes(mask).astype(int)
     mask = 255 * mask.astype(np.uint8)
