@@ -147,34 +147,39 @@ def find_the_character():
 
 @app.route('/separate_character')
 def separate_character():
-    request_dict = request.args.to_dict()
     # check request parameter
-    if len(request_dict) == 0:
-        return 'no request parameter'
+    request_dict = request.args.to_dict()
+    key_ad_id = 'ad_id'
+    if key_ad_id not in request_dict:
+        return fail(msg='no request parameter')
+
     ad_id = request_dict['ad_id']
     base_path: Path = FILES.joinpath(ad_id)
 
     # read cropped
     cropped_path = base_path.joinpath('texture.png')
     cropped = cv2.imread(cropped_path.as_posix())
+
     # send cropped image to pose estimator
     data_file = {'data': cv2.imencode('.png', cropped)[1].tobytes()}
     resp = requests.post("http://torchserve:8080/predictions/drawn_humanoid_pose_estimator", files=data_file, verify=False)
     if resp is None or resp.status_code >= 300:
-        return f"Failed to get skeletons, please check if the 'docker_torchserve' is running and healthy, resp: {resp}"
+        msg = f"Failed to get skeletons, please check if the 'docker_torchserve' is running and healthy, resp: {resp}"
+        return fail(msg=msg)
 
     pose_results = json.loads(resp.content)
 
     # error check pose_results
     if type(pose_results) == dict and 'code' in pose_results.keys() and pose_results['code'] == 404:
-        return f'Error performing pose estimation. Check that drawn_humanoid_pose_estimator.mar was properly downloaded. Response: {pose_results}'
+        msg = f'Error performing pose estimation. Check that drawn_humanoid_pose_estimator.mar was properly downloaded. Response: {pose_results}'
+        return fail(msg=msg)
     
-    # if more than one skeleton detected, abort
+    # if cannot detect any skeleton, abort
     if len(pose_results) == 0:
         msg = 'Could not detect any skeletons within the character bounding box. Expected exactly 1. Aborting.'
         return msg
     
-    # if more than one skeleton detected,
+    # if more than one skeleton detected, abort
     if 1 < len(pose_results):
         msg = f'Detected {len(pose_results)} skeletons with the character bounding box. Expected exactly 1. Aborting.'
         return msg
@@ -208,7 +213,7 @@ def separate_character():
     with open(char_cfg_path.as_posix(), 'w') as f:
         yaml.dump(char_cfg, f)
 
-    return { 'ad_id' : ad_id }
+    return success()
 
 
 def segment(img: np.ndarray):

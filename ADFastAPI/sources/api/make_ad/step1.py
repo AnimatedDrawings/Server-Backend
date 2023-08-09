@@ -5,7 +5,7 @@ from uuid import uuid4
 import httpx
 import yaml
 import logging
-from sources.schema import DefaultResponse, BoundingBox
+from sources.schema import DefaultResponse
 from pydantic import BaseModel
 
 router = APIRouter(
@@ -17,7 +17,7 @@ AD_BASEURL = 'http://animated_drawings:8001/'
 
 class UploadADrawingResponse(BaseModel):
     ad_id: str
-    bounding_box: BoundingBox
+    bounding_box: dict
 
 @router.post('/upload_a_drawing')
 async def upload_a_drawing(file: UploadFile = File(...)):
@@ -48,9 +48,7 @@ async def upload_a_drawing(file: UploadFile = File(...)):
             bounding_box_path = base_path.joinpath('bounding_box.yaml')
             with open(bounding_box_path.as_posix(), encoding='UTF-8') as bounding_box_yaml:
                 bounding_box_dict = yaml.load(bounding_box_yaml, Loader=yaml.FullLoader)
-                bouding_box = BoundingBox.parse_obj(bounding_box_dict)
-                my_response = UploadADrawingResponse(ad_id=ad_id, bounding_box=BoundingBox())
-                my_response.bounding_box = bouding_box
+                my_response = UploadADrawingResponse(ad_id=ad_id, bounding_box=bounding_box_dict)
                 default_response.success(response = my_response) 
                 return default_response.dict()
         else:
