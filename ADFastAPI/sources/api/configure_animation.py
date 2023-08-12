@@ -1,4 +1,4 @@
-from fastapi import APIRouter, UploadFile, File
+from fastapi import APIRouter
 from fastapi.responses import FileResponse
 from pathlib import Path
 import httpx
@@ -60,7 +60,5 @@ def download_video(ad_id: str, ad_animation: ADAnimation):
     ad_animation_dict = ad_animation.dict() 
     ad_animation_name = ad_animation_dict['name']
     video_file_path = base_path.joinpath(f'video/{ad_animation_name}.gif')
-    # if not video_file_path.exists():
-    #     return 'no file'
     return FileResponse(video_file_path.as_posix(), media_type = 'image/gif')
         
