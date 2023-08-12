@@ -1,4 +1,4 @@
-from flask import Flask, send_file, request
+from flask import Flask, request
 import cv2
 from pathlib import Path
 import requests
@@ -7,6 +7,8 @@ import numpy as np
 import yaml
 from skimage import measure
 from scipy import ndimage
+
+import logging
 
 app = Flask(__name__)
 FILES = Path('/mycode/files')
@@ -20,14 +22,29 @@ import animated_drawings.render
 def ping():
     return 'animated_drawings test ping success!!'
 
+
+def fail(msg: str) -> dict:
+    return {
+        'is_success' : False,
+        'msg' : msg
+    }
+
+def success() -> dict:
+    return {
+        'is_success' : True,
+        'msg' : ''
+    }
+
+
 @app.route('/upload_a_drawing')
 def upload_a_drawing():
-    request_dict = request.args.to_dict()
     # check request parameter
-    if len(request_dict) == 0:
-        return 'no request parameter'
+    request_dict = request.args.to_dict()
+    key_ad_id = 'ad_id'
+    if key_ad_id not in request_dict:
+        return fail(msg='no request parameter')
 
-    ad_id = request_dict['ad_id']
+    ad_id = request_dict[key_ad_id]
     base_path: Path = FILES.joinpath(ad_id)
     file_name = 'image.png'
     img_fn = base_path.joinpath(file_name).as_posix()
@@ -37,29 +54,37 @@ def upload_a_drawing():
 
     # ensure it's rgb
     if len(img.shape) != 3:
-        return 'image is not rgb'
+        msg = f'image must have 3 channels (rgb). Found {len(img.shape)}'
+        return fail(msg=msg)
     
     # convert to bytes and send to torchserve
     img_b = cv2.imencode('.png', img)[1].tobytes()
     request_data = {'data': img_b}
     resp = requests.post("http://torchserve:8080/predictions/drawn_humanoid_detector", files=request_data, verify=False)
-
     if resp is None or resp.status_code >= 300:
-        return 'torchserve connection error : bounding box' 
+        msg = f"Failed to get bounding box, please check if the 'docker_torchserve' is running and healthy, resp: {resp}"
+        return fail(msg=msg)
 
     detection_results = json.loads(resp.content)
 
     # error check detection_results
     if type(detection_results) == dict and 'code' in detection_results.keys() and detection_results['code'] == 404:
-        msg = 'Error performing detection. Check that drawn_humanoid_detector.mar was properly downloaded. Response: {detection_results}'
-        return msg
+        msg = f'Error performing detection. Check that drawn_humanoid_detector.mar was properly downloaded. Response: {detection_results}'
+        return fail(msg=msg)
 
     # order results by score, descending
     detection_results.sort(key=lambda x: x['score'], reverse=True)
+
     # if no drawn humanoids detected, abort
     if len(detection_results) == 0:
         msg = 'Could not detect any drawn humanoids in the image. Aborting'
-        return msg
+        return fail(msg=msg)
+
+    # otherwise, report # detected and score of highest.
+    log_file_path = base_path.joinpath('logs/log.txt')
+    logging.basicConfig(filename=log_file_path.as_posix(), level=logging.DEBUG)
+    msg = f'Detected {len(detection_results)} humanoids in image. Using detection with highest score {detection_results[0]["score"]}.'
+    logging.info(msg)
     
     # calculate the coordinates of the character bounding box
     bbox = np.array(detection_results[0]['bbox'])
@@ -75,22 +100,17 @@ def upload_a_drawing():
             'bottom': b
         }, f)
 
-    bounding_box_dict = {
-        'left' : l,
-        'top' : t,
-        'right' : r,
-        'bottom' : b
-    }
-    return bounding_box_dict
+    return success()
 
 
 @app.route('/find_the_character')
 def find_the_character():
-    request_dict = request.args.to_dict()
-
     # check request parameter
-    if len(request_dict) == 0:
-        return 'no request parameter'
+    request_dict = request.args.to_dict()
+    key_ad_id = 'ad_id'
+    if key_ad_id not in request_dict:
+        return fail(msg='no request parameter')
+
     ad_id = request_dict['ad_id']
     base_path: Path = FILES.joinpath(ad_id)
     
@@ -109,7 +129,10 @@ def find_the_character():
 
     # save mask
     mask_image_path = base_path.joinpath('mask.png')
-    mask = segment(cropped)
+    try:
+        mask = segment(cropped)
+    except:
+        return fail('Found no contours within image')
     cv2.imwrite(mask_image_path.as_posix(), mask)
 
     # create masked_image(texture + mask)
@@ -119,39 +142,44 @@ def find_the_character():
     masked_image_path = base_path.joinpath('masked_img.png')
     cv2.imwrite(masked_image_path.as_posix(), masked_img)
 
-    return { 'is_success' : True }
+    return success()
 
 
 @app.route('/separate_character')
 def separate_character():
-    request_dict = request.args.to_dict()
     # check request parameter
-    if len(request_dict) == 0:
-        return 'no request parameter'
+    request_dict = request.args.to_dict()
+    key_ad_id = 'ad_id'
+    if key_ad_id not in request_dict:
+        return fail(msg='no request parameter')
+
     ad_id = request_dict['ad_id']
     base_path: Path = FILES.joinpath(ad_id)
 
     # read cropped
     cropped_path = base_path.joinpath('texture.png')
     cropped = cv2.imread(cropped_path.as_posix())
+
     # send cropped image to pose estimator
     data_file = {'data': cv2.imencode('.png', cropped)[1].tobytes()}
     resp = requests.post("http://torchserve:8080/predictions/drawn_humanoid_pose_estimator", files=data_file, verify=False)
     if resp is None or resp.status_code >= 300:
-        return f"Failed to get skeletons, please check if the 'docker_torchserve' is running and healthy, resp: {resp}"
+        msg = f"Failed to get skeletons, please check if the 'docker_torchserve' is running and healthy, resp: {resp}"
+        return fail(msg=msg)
 
     pose_results = json.loads(resp.content)
 
     # error check pose_results
     if type(pose_results) == dict and 'code' in pose_results.keys() and pose_results['code'] == 404:
-        return f'Error performing pose estimation. Check that drawn_humanoid_pose_estimator.mar was properly downloaded. Response: {pose_results}'
+        msg = f'Error performing pose estimation. Check that drawn_humanoid_pose_estimator.mar was properly downloaded. Response: {pose_results}'
+        return fail(msg=msg)
     
-    # if more than one skeleton detected, abort
+    # if cannot detect any skeleton, abort
     if len(pose_results) == 0:
         msg = 'Could not detect any skeletons within the character bounding box. Expected exactly 1. Aborting.'
         return msg
     
-    # if more than one skeleton detected,
+    # if more than one skeleton detected, abort
     if 1 < len(pose_results):
         msg = f'Detected {len(pose_results)} skeletons with the character bounding box. Expected exactly 1. Aborting.'
         return msg
@@ -185,7 +213,7 @@ def separate_character():
     with open(char_cfg_path.as_posix(), 'w') as f:
         yaml.dump(char_cfg, f)
 
-    return { 'ad_id' : ad_id }
+    return success()
 
 
 def segment(img: np.ndarray):
@@ -236,8 +264,7 @@ def segment(img: np.ndarray):
             biggest = size
 
     if mask is None:
-        msg = 'Found no contours within image'
-        assert False, msg
+        assert False, 'Found no contours within image'
 
     mask = ndimage.binary_fill_holes(mask).astype(int)
     mask = 255 * mask.astype(np.uint8)
@@ -247,19 +274,22 @@ def segment(img: np.ndarray):
 
 @app.route('/add_animation')
 def add_animation():
-    request_dict = request.args.to_dict()
     # check request parameter
-    if len(request_dict) == 0:
-        return 'no request parameter'
-    ad_id = request_dict['ad_id']
-    ad_animation_name = request_dict['ad_animation_name']
+    request_dict = request.args.to_dict()
+    key_ad_id = 'ad_id'
+    key_ad_animation = 'ad_animation'
+    if key_ad_id not in request_dict or key_ad_animation not in request_dict:
+        return fail(msg='no request parameter')
     
+    ad_id = request_dict['ad_id']
+    ad_animation = request_dict['ad_animation']
+
     file_path: Path = FILES.joinpath(ad_id)
     video_path = file_path.joinpath('video')
     video_path.mkdir(exist_ok = True)
-    output_video_path: Path = video_path.joinpath(f'{ad_animation_name}.gif')
+    output_video_path: Path = video_path.joinpath(f'{ad_animation}.gif')
     if output_video_path.exists():
-        return 'exist file'
+        return success()
 
     """
     Given a path to a directory with character annotations, a motion configuration file, and a retarget configuration file,
@@ -267,7 +297,7 @@ def add_animation():
     """
     # package character_cfg_fn, motion_cfg_fn, and retarget_cfg_fn
     char_cfg_path = file_path.joinpath('char_cfg.yaml')
-    motion_cfg_path = SOURCES.joinpath(f'examples/config/motion/{ad_animation_name}.yaml')
+    motion_cfg_path = SOURCES.joinpath(f'examples/config/motion/{ad_animation}.yaml')
     retarget_cfg_path = SOURCES.joinpath('examples/config/retarget/fair1_ppf.yaml')
     animated_drawing_dict = {
         'character_cfg': char_cfg_path.as_posix(),
@@ -292,7 +322,7 @@ def add_animation():
     # render the video
     animated_drawings.render.start(output_mvc_cfg_path.as_posix())
 
-    return { 'ad_id' : ad_id }
+    return success()
 
 
 if __name__ == '__main__':
