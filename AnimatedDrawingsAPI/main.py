@@ -274,19 +274,22 @@ def segment(img: np.ndarray):
 
 @app.route('/add_animation')
 def add_animation():
-    request_dict = request.args.to_dict()
     # check request parameter
-    if len(request_dict) == 0:
-        return 'no request parameter'
-    ad_id = request_dict['ad_id']
-    ad_animation_name = request_dict['ad_animation_name']
+    request_dict = request.args.to_dict()
+    key_ad_id = 'ad_id'
+    key_ad_animation = 'ad_animation'
+    if key_ad_id not in request_dict or key_ad_animation not in request_dict:
+        return fail(msg='no request parameter')
     
+    ad_id = request_dict['ad_id']
+    ad_animation = request_dict['ad_animation']
+
     file_path: Path = FILES.joinpath(ad_id)
     video_path = file_path.joinpath('video')
     video_path.mkdir(exist_ok = True)
-    output_video_path: Path = video_path.joinpath(f'{ad_animation_name}.gif')
+    output_video_path: Path = video_path.joinpath(f'{ad_animation}.gif')
     if output_video_path.exists():
-        return 'exist file'
+        return success()
 
     """
     Given a path to a directory with character annotations, a motion configuration file, and a retarget configuration file,
@@ -294,7 +297,7 @@ def add_animation():
     """
     # package character_cfg_fn, motion_cfg_fn, and retarget_cfg_fn
     char_cfg_path = file_path.joinpath('char_cfg.yaml')
-    motion_cfg_path = SOURCES.joinpath(f'examples/config/motion/{ad_animation_name}.yaml')
+    motion_cfg_path = SOURCES.joinpath(f'examples/config/motion/{ad_animation}.yaml')
     retarget_cfg_path = SOURCES.joinpath('examples/config/retarget/fair1_ppf.yaml')
     animated_drawing_dict = {
         'character_cfg': char_cfg_path.as_posix(),
@@ -319,7 +322,7 @@ def add_animation():
     # render the video
     animated_drawings.render.start(output_mvc_cfg_path.as_posix())
 
-    return { 'ad_id' : ad_id }
+    return success()
 
 
 if __name__ == '__main__':

@@ -25,12 +25,9 @@ class BoundingBox(BaseModel):
 async def find_the_character(ad_id: str, bounding_box: BoundingBox):
     base_path: Path = FILES_IN_DOCKER.joinpath(ad_id)
     bounding_box_path = base_path.joinpath('bounding_box.yaml')
-    bounding_box_path.unlink(missing_ok=True)
-    bounding_box_location = bounding_box_path.as_posix()
-    bounding_box_dict = bounding_box.dict()
 
-    with open(bounding_box_location, 'w') as f:
-        yaml.dump(bounding_box_dict, f)
+    with open(bounding_box_path.as_posix(), 'w') as f:
+        yaml.dump(bounding_box.dict(), f)
 
     log_file_path = base_path.joinpath('logs/log.txt')
     logging.basicConfig(filename = log_file_path.as_posix(), level = logging.DEBUG)
