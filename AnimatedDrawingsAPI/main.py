@@ -124,8 +124,8 @@ def find_the_character():
     original_image_path = base_path.joinpath('image.png')
     img = cv2.imread(original_image_path.as_posix())
     cropped = img[t:b, l:r]
-    cropped_image_path = base_path.joinpath('texture.png')
-    cv2.imwrite(cropped_image_path.as_posix(), cropped)
+    cropped_img_path = base_path.joinpath('texture.png')
+    cv2.imwrite(cropped_img_path.as_posix(), cropped)
 
     # save mask
     mask_image_path = base_path.joinpath('mask.png')
@@ -152,15 +152,28 @@ def separate_character():
     key_ad_id = 'ad_id'
     if key_ad_id not in request_dict:
         return fail(msg='no request parameter')
-
+    
     ad_id = request_dict['ad_id']
     base_path: Path = FILES.joinpath(ad_id)
 
-    # read cropped
-    cropped_path = base_path.joinpath('texture.png')
-    cropped = cv2.imread(cropped_path.as_posix())
+    cropped_img_path = base_path.joinpath('texture.png')
+    masked_img_path = base_path.joinpath('masked_img.png')
+
+    # resize masked_img.png
+    cropped_img = cv2.imread(cropped_img_path.as_posix(), cv2.IMREAD_UNCHANGED)
+    height, width, _ = cropped_img.shape
+    masked_img = cv2.imread(masked_img_path.as_posix(), cv2.IMREAD_UNCHANGED)
+    resized_masked_img = cv2.resize(masked_img, dsize=(width, height), interpolation=cv2.INTER_LINEAR)
+    cv2.imwrite(masked_img_path.as_posix(), resized_masked_img)
+
+    # resave mask.png
+    masked_img = cv2.imread(masked_img_path.as_posix(), cv2.IMREAD_UNCHANGED)
+    mask_path = base_path.joinpath('mask.png')
+    mask = masked_img[:, :, 3]
+    cv2.imwrite(mask_path.as_posix(), mask)
 
     # send cropped image to pose estimator
+    cropped = cv2.imread(cropped_img_path.as_posix())
     data_file = {'data': cv2.imencode('.png', cropped)[1].tobytes()}
     resp = requests.post("http://torchserve:8080/predictions/drawn_humanoid_pose_estimator", files=data_file, verify=False)
     if resp is None or resp.status_code >= 300:
