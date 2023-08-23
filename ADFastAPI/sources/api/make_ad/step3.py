@@ -20,9 +20,10 @@ class SeparateCharacterResponse(BaseModel):
 @router.post('/separate_character/{ad_id}')
 async def separate_character(ad_id: str, file: UploadFile = File(...)):
     base_path: Path = FILES_IN_DOCKER.joinpath(ad_id)
-    separated_img_path = base_path.joinpath('separated_img.png')
 
-    with open(separated_img_path.as_posix(), 'wb') as image:
+    # resave masked_img.png
+    masked_img_path = base_path.joinpath('masked_img.png')
+    with open(masked_img_path.as_posix(), 'wb') as image:
         image.write(file.file.read())
         image.close()
 
