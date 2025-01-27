@@ -30,7 +30,7 @@ services:
       context: .
       dockerfile: ./ADFastAPI/ad_fast_api.Dockerfile
     ports:
-      - 8000:8000
+      - ${EXTERNAL_PORT}:8000
     volumes:
       - ./ADFastAPI:/mycode/ADFastAPI
       - ./files:/mycode/files

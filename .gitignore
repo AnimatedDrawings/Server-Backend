@@ -4,3 +4,4 @@ AnimatedDrawingsAPI/sources
 # Byte-compiled / optimized / DLL files
 *.pyc
 ADFastAPI/__pychache__/
+.env
