@@ -1,6 +1,7 @@
-AnimatedDrawings/
+AnimatedDrawingsAPI/sources
 *.log
 
 # Byte-compiled / optimized / DLL files
 *.pyc
-MyFastAPI/__pychache__/
+ADFastAPI/__pychache__/
+.env
