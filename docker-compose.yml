@@ -1,5 +1,3 @@
-version: '3.8'
-
 services:
   torchserve:
     container_name: torchserve
@@ -21,7 +19,7 @@ services:
       - 8001
     volumes:
       - ./AnimatedDrawingsAPI:/mycode/AnimatedDrawingsAPI
-      - /mnt/sdb1/ad_db/files:/mycode/files
+      - ./files:/mycode/files
     entrypoint: conda run --no-capture-output -n animated_drawings python -u /mycode/AnimatedDrawingsAPI/main.py
 
   ad_fast_api:
@@ -32,8 +30,8 @@ services:
       context: .
       dockerfile: ./ADFastAPI/ad_fast_api.Dockerfile
     ports:
-      - 8000:8000
+      - ${EXTERNAL_PORT}:8000
     volumes:
       - ./ADFastAPI:/mycode/ADFastAPI
-      - /mnt/sdb1/ad_db/files:/mycode/files
+      - ./files:/mycode/files
     entrypoint: python /mycode/ADFastAPI/main.py
