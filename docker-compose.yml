@@ -7,6 +7,8 @@ services:
     expose:
       - 8080
       - 8081
+    networks:
+      - ad_server
 
   animated_drawings:
     depends_on:
@@ -21,6 +23,8 @@ services:
       - ./AnimatedDrawingsAPI:/mycode/AnimatedDrawingsAPI
       - ./files:/mycode/files
     entrypoint: conda run --no-capture-output -n animated_drawings python -u /mycode/AnimatedDrawingsAPI/main.py
+    networks:
+      - ad_server
 
   ad_fast_api:
     depends_on:
@@ -35,3 +39,10 @@ services:
       - ./ADFastAPI:/mycode/ADFastAPI
       - ./files:/mycode/files
     entrypoint: python /mycode/ADFastAPI/main.py
+    networks:
+      - ad_server
+
+networks:
+  ad_server:
+    name: ad_server
+    driver: bridge
