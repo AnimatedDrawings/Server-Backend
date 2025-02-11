@@ -1,6 +1,5 @@
 services:
   torchserve:
-    container_name: torchserve
     build:
       context: ./AnimatedDrawingsAPI/sources/torchserve/
       dockerfile: Dockerfile
@@ -8,12 +7,11 @@ services:
       - 8080
       - 8081
     networks:
-      - ad_server
+      ad_server: {}
 
   animated_drawings:
     depends_on:
       - torchserve
-    container_name: animated_drawings
     build:
       context: .
       dockerfile: ./AnimatedDrawingsAPI/animated_drawings.Dockerfile
@@ -24,12 +22,11 @@ services:
       - ./files:/mycode/files
     entrypoint: conda run --no-capture-output -n animated_drawings python -u /mycode/AnimatedDrawingsAPI/main.py
     networks:
-      - ad_server
+      ad_server: {}
 
   ad_fast_api:
     depends_on:
       - animated_drawings
-    container_name: ad_fast_api
     build:
       context: .
       dockerfile: ./ADFastAPI/ad_fast_api.Dockerfile
@@ -40,9 +37,9 @@ services:
       - ./files:/mycode/files
     entrypoint: python /mycode/ADFastAPI/main.py
     networks:
-      - ad_server
+      ad_server: {}
 
 networks:
   ad_server:
-    name: ad_server
+    name: ${NETWORK_NAME}
     driver: bridge
