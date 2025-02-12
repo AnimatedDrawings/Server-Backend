@@ -6,6 +6,11 @@ services:
     expose:
       - 8080
       - 8081
+    restart: always
+    deploy:
+      resources:
+        limits:
+          memory: 64G
     networks:
       ad_server: {}
 
@@ -21,6 +26,7 @@ services:
       - ./AnimatedDrawingsAPI:/mycode/AnimatedDrawingsAPI
       - ./files:/mycode/files
     entrypoint: conda run --no-capture-output -n animated_drawings python -u /mycode/AnimatedDrawingsAPI/main.py
+    restart: always
     networks:
       ad_server: {}
 
@@ -36,6 +42,7 @@ services:
       - ./ADFastAPI:/mycode/ADFastAPI
       - ./files:/mycode/files
     entrypoint: python /mycode/ADFastAPI/main.py
+    restart: always
     networks:
       ad_server: {}
 
