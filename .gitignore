@@ -6,4 +6,4 @@ AnimatedDrawingsAPI/sources
 ADFastAPI/__pychache__/
 
 .env
-files/
+.vscode/

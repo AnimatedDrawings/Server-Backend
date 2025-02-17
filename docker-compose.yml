@@ -10,7 +10,8 @@ services:
     deploy:
       resources:
         limits:
-          memory: 64G
+          cpus: '0.25'
+          memory: 64g
     networks:
       ad_server: {}
 

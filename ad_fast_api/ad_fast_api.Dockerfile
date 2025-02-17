@@ -1,4 +1,4 @@
-FROM python:3.11
+FROM python:3.13.2
 
 WORKDIR /mycode
 COPY /ADFastAPI/requirements.txt .
