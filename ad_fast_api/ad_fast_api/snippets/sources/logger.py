@@ -1,6 +1,8 @@
 import logging
+from logging import Logger
 from logging.handlers import RotatingFileHandler
 from pathlib import Path
+from typing import Optional
 
 
 LOG_FILE_NAME = "log.txt"
@@ -11,8 +13,9 @@ def setup_logger(
     level=logging.DEBUG,
     max_size=5 * 1024 * 1024,
     backup_count=5,
-):
-    log_file = base_path.joinpath(LOG_FILE_NAME)
+    log_file_name: Optional[str] = None,
+) -> Logger:
+    log_file = base_path.joinpath(log_file_name or LOG_FILE_NAME)
     log_file.touch(exist_ok=True)
 
     # 로거 생성

@@ -1,7 +1,6 @@
 import aiofiles
 from uuid import uuid4
 from datetime import datetime
-from datetime import datetime
 from ad_fast_api.workspace.sources.work_dir import get_base_path
 from pathlib import Path
 from fastapi import UploadFile
@@ -23,9 +22,12 @@ def make_ad_id(
 
 def create_base_dir(
     ad_id: str,
-    base_path: Optional[Path] = None,
+    files_path: Optional[Path] = None,
 ) -> Path:
-    base_path = base_path or get_base_path(ad_id=ad_id)
+    base_path = get_base_path(
+        ad_id=ad_id,
+        files_path=files_path,
+    )
     base_path.mkdir()
     return base_path
 

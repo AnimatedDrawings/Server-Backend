@@ -64,27 +64,27 @@
 #             return default_response.dict()
 
 
-from fastapi import APIRouter, UploadFile, File, HTTPException
-from ad_fast_api.domain.upload_drawing.features import upload_drawing_feature as udf
+# from fastapi import APIRouter, UploadFile, File, HTTPException
+# from ad_fast_api.domain.upload_drawing.features import upload_drawing_feature as udf
 
-router = APIRouter()
+# router = APIRouter()
 
 
-@router.post("/upload_drawing")
-async def upload_drawing(
-    file: UploadFile = File(...),
-):
-    try:
-        ad_id = udf.make_ad_id()
-        base_path = udf.create_base_dir(ad_id=ad_id)
-        file_bytes = file.file.read()
+# @router.post("/upload_drawing")
+# async def upload_drawing(
+#     file: UploadFile = File(...),
+# ):
+#     try:
+#         ad_id = udf.make_ad_id()
+#         base_path = udf.create_base_dir(ad_id=ad_id)
+#         file_bytes = file.file.read()
 
-        await udf.save_image(
-            base_path=base_path,
-            file_bytes=file_bytes,
-        )
-    except Exception as e:
-        raise HTTPException(
-            status_code=500,
-            detail=str(e),
-        )
+#         await udf.save_image(
+#             base_path=base_path,
+#             file_bytes=file_bytes,
+#         )
+#     except Exception as e:
+#         raise HTTPException(
+#             status_code=500,
+#             detail=str(e),
+#         )

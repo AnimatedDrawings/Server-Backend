@@ -8,9 +8,7 @@ from pathlib import Path
 from ad_fast_api.domain.upload_drawing.testings import (
     mock_upload_drawing_feature as mudf,
 )
-
-
-TEST_DIR = Path(__file__).parent
+from ad_fast_api.domain.upload_drawing.tests.conftest import TEST_DIR
 
 
 def test_make_ad_id():
@@ -32,12 +30,11 @@ def test_make_ad_id():
 def test_create_base_dir():
     # given
     ad_id = "1234567890_hexcode"
-    base_path = TEST_DIR.joinpath(ad_id)
 
     # when
     base_path = cwd.create_base_dir(
         ad_id=ad_id,
-        base_path=base_path,
+        files_path=TEST_DIR,
     )
 
     # then
