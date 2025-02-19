@@ -153,8 +153,9 @@ async def save_bounding_box(
 ):
     # dump the bounding box results to file asynchronously
     bounding_box_path = base_path.joinpath(BOUNDING_BOX_FILE_NAME)
+    content = yaml.dump(bounding_box)
     async with aiofiles.open(bounding_box_path.as_posix(), "w") as f:
-        await f.write(yaml.dump(bounding_box))
+        await f.write(content)
 
 
 async def detect_character(ad_id: str):

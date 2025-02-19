@@ -1,11 +1,14 @@
-from ad_fast_api.domain.upload_drawing.tests.conftest import TEST_DIR
 import pytest
-from unittest.mock import patch, Mock, AsyncMock
-import numpy as np
-from ad_fast_api.domain.upload_drawing.sources.features import detect_character as dc
 import json
 import httpx
-import yaml
+import respx
+import numpy as np
+from ad_fast_api.domain.upload_drawing.tests.conftest import TEST_DIR
+from unittest.mock import patch, Mock, AsyncMock
+from ad_fast_api.domain.upload_drawing.sources.features import detect_character as dc
+from ad_fast_api.snippets.testings.mock_logger import mock_logger
+
+from pathlib import Path
 
 
 def test_check_image_is_rgb_success():
@@ -30,9 +33,8 @@ def test_check_image_is_rgb_success():
         assert isinstance(img, np.ndarray)
 
 
-def test_check_image_is_rgb_raises_exception():
+def test_check_image_is_rgb_raises_exception(mock_logger):
     # given
-    mock_logger = Mock()
     origin_image_name = "test.png"
 
     with patch("cv2.imread", return_value=[[0, 0], [0, 0]]):
@@ -82,102 +84,61 @@ def test_resize_image_when_smaller_than_1000():
 
 
 @pytest.mark.asyncio
-async def test_send_to_torchserve_success():
+@respx.mock
+async def test_send_to_torchserve_success(mock_logger):
     # given
-    mock_logger = Mock()
-    test_image = np.zeros((100, 100, 3), dtype=np.uint8)
-    mock_response = Mock()
-    mock_response.status_code = 200
-    mock_encoded = Mock()
-    mock_encoded.tobytes.return_value = b"mock_bytes"
-
-    mock_client = AsyncMock()
-    mock_client.post = AsyncMock(return_value=mock_response)
-    mock_async_client_aenter = AsyncMock(
-        return_value=mock_client,
-    )
-    mock_async_client = AsyncMock(
-        __aenter__=mock_async_client_aenter,
-    )
+    mock_response = httpx.Response(200, content=b'{"result": "success"}')
+    route = respx.post(dc.TORCHSERVE_URL).mock(return_value=mock_response)
 
     # when
-    with patch(
-        "httpx.AsyncClient",
-        return_value=mock_async_client,
-    ):
-        with patch("cv2.imencode", return_value=(True, mock_encoded)):
-            # then
-            # Should not raise any exception
-            await dc.send_to_torchserve(
-                img=test_image,
-                logger=mock_logger,
-                url="http://test-url",
-            )
+    test_img = np.zeros((224, 224, 3), dtype=np.uint8)
+    response = await dc.send_to_torchserve(test_img, mock_logger)
+
+    # then
+    assert response.status_code == mock_response.status_code
+    assert response.json() == mock_response.json()
+    assert route.called
+    mock_logger.critical.assert_not_called()
 
 
 @pytest.mark.asyncio
-async def test_send_to_torchserve_failed_status_code():
+@respx.mock
+async def test_send_to_torchserve_fail_status_code_300(mock_logger):
     # given
-    mock_logger = Mock()
-    test_image = np.zeros((100, 100, 3), dtype=np.uint8)
-    mock_response = Mock()
-    mock_response.status_code = 400
-    mock_encoded = Mock()
-    mock_encoded.tobytes.return_value = b"mock_bytes"
+    mock_response = httpx.Response(300, content=b"Bad Request")
+    respx.post(dc.TORCHSERVE_URL).mock(return_value=mock_response)
+    test_img = np.zeros((224, 224, 3), dtype=np.uint8)
 
     # when
-    with patch("httpx.AsyncClient") as mock_client:
-        mock_instance = mock_client.return_value
-        mock_instance.__aenter__.return_value.post = AsyncMock(
-            return_value=mock_response
-        )
+    with pytest.raises(Exception) as exc_info:
+        await dc.send_to_torchserve(test_img, mock_logger)
 
-        with patch("cv2.imencode", return_value=(True, mock_encoded)):
-            with pytest.raises(Exception) as exc_info:
-                await dc.send_to_torchserve(
-                    img=test_image,
-                    logger=mock_logger,
-                    url="http://test-url",
-                )
-
-            # then
-            expected_msg = dc.SEND_TO_TORCHSERVE_ERROR.format(resp=mock_response)
-            assert expected_msg == str(exc_info.value)
-            mock_logger.critical.assert_called_once_with(expected_msg)
+    # then
+    expected_msg = dc.SEND_TO_TORCHSERVE_ERROR.format(resp=mock_response)
+    assert str(exc_info.value) == expected_msg
+    mock_logger.critical.assert_called_once_with(expected_msg)
 
 
 @pytest.mark.asyncio
-async def test_send_to_torchserve_failed_connection_error():
+@respx.mock
+async def test_send_to_torchserve_fail_connection_error(mock_logger):
     # given
-    mock_logger = Mock()
-    test_image = np.zeros((100, 100, 3), dtype=np.uint8)
-    mock_encoded = Mock()
-    mock_encoded.tobytes.return_value = b"mock_bytes"
-    connection_error = "Connection error"
+    test_exception = httpx.ConnectError("Connection failed")
+    respx.post(dc.TORCHSERVE_URL).mock(side_effect=test_exception)
+    test_img = np.zeros((224, 224, 3), dtype=np.uint8)
 
     # when
-    with patch("httpx.AsyncClient") as mock_client:
-        mock_instance = mock_client.return_value
-        mock_instance.__aenter__.return_value.post.side_effect = Exception(
-            connection_error
-        )
-        with patch("cv2.imencode", return_value=(True, mock_encoded)):
-            with pytest.raises(Exception) as exc_info:
-                await dc.send_to_torchserve(
-                    img=test_image,
-                    logger=mock_logger,
-                    url="http://test-url",
-                )
+    with pytest.raises(Exception) as exc_info:
+        await dc.send_to_torchserve(test_img, mock_logger)
 
-            # then
-            expected_msg = dc.SEND_TO_TORCHSERVE_ERROR.format(resp=connection_error)
-            assert expected_msg == str(exc_info.value)
-            mock_logger.critical.assert_called_once_with(expected_msg)
+    # then
+    expected_msg = dc.SEND_TO_TORCHSERVE_ERROR.format(resp=str(test_exception))
+    assert str(exc_info.value) == expected_msg
+    mock_logger.critical.assert_called_once_with(expected_msg)
 
 
-def test_check_detection_results_success():
+def test_check_detection_results_success(mock_logger):
     # given
-    mock_logger = Mock()
     expected_results = {"predictions": [{"bbox": [1, 2, 3, 4]}]}
     mock_response = Mock(spec=httpx.Response)
     mock_response.content = json.dumps(expected_results).encode()
@@ -192,9 +153,8 @@ def test_check_detection_results_success():
     assert results == expected_results
 
 
-def test_check_detection_results_failed():
+def test_check_detection_results_failed(mock_logger):
     # given
-    mock_logger = Mock()
     error_response = {"code": 404, "message": "Model not found"}
     mock_response = Mock(spec=httpx.Response)
     mock_response.content = json.dumps(error_response).encode()
@@ -212,9 +172,8 @@ def test_check_detection_results_failed():
     mock_logger.critical.assert_called_once_with(expected_msg)
 
 
-def test_check_detection_results_with_non_404_code():
+def test_check_detection_results_with_non_404_code(mock_logger):
     # given
-    mock_logger = Mock()
     response_data = {"code": 500, "message": "Internal server error"}
     mock_response = Mock(spec=httpx.Response)
     mock_response.content = json.dumps(response_data).encode()
@@ -229,9 +188,8 @@ def test_check_detection_results_with_non_404_code():
     assert results == response_data
 
 
-def test_sort_detection_results_success():
+def test_sort_detection_results_success(mock_logger):
     # given
-    mock_logger = Mock()
     detection_results = [
         {"score": 0.7, "bbox": [1, 2, 3, 4]},
         {"score": 0.9, "bbox": [5, 6, 7, 8]},
@@ -257,9 +215,8 @@ def test_sort_detection_results_success():
     mock_logger.info.assert_called_once_with(expected_msg)
 
 
-def test_sort_detection_results_empty_list():
+def test_sort_detection_results_empty_list(mock_logger):
     # given
-    mock_logger = Mock()
     detection_results = []
 
     # when
@@ -275,9 +232,8 @@ def test_sort_detection_results_empty_list():
     mock_logger.critical.assert_called_once_with(expected_msg)
 
 
-def test_sort_detection_results_single_item():
+def test_sort_detection_results_single_item(mock_logger):
     # given
-    mock_logger = Mock()
     detection_results = [
         {"score": 0.8, "bbox": [1, 2, 3, 4]},
     ]
@@ -299,9 +255,8 @@ def test_sort_detection_results_single_item():
     mock_logger.info.assert_called_once_with(expected_msg)
 
 
-def test_calculate_bounding_box_success():
+def test_calculate_bounding_box_success(mock_logger):
     # given
-    mock_logger = Mock()
     detection_results = [{"bbox": [10.6, 20.3, 30.7, 40.2], "score": 0.9}]
     expected_bbox = {"left": 11, "top": 20, "right": 31, "bottom": 40}
 
@@ -316,9 +271,8 @@ def test_calculate_bounding_box_success():
     mock_logger.critical.assert_not_called()
 
 
-def test_calculate_bounding_box_failed():
+def test_calculate_bounding_box_failed(mock_logger):
     # given
-    mock_logger = Mock()
     detection_results = [{"invalid_key": "value"}]  # Missing bbox key
 
     # when
@@ -338,34 +292,26 @@ def test_calculate_bounding_box_failed():
 @pytest.mark.asyncio
 async def test_save_bounding_box_success():
     # given
-    bounding_box = {
-        "left": 11,
-        "top": 20,
-        "right": 31,
-        "bottom": 40,
-    }
+    bounding_box = {"left": 11, "top": 20, "right": 31, "bottom": 40}
     base_path = TEST_DIR
-
+    expected_path = base_path.joinpath(dc.BOUNDING_BOX_FILE_NAME)
     mock_file = AsyncMock()
-    mock_file.write = AsyncMock()
-    mock_aiofiles_open_aenter = AsyncMock(
-        return_value=mock_file,
-    )
-    mock_aiofiles_open = AsyncMock(
-        __aenter__=mock_aiofiles_open_aenter,
-    )
+    mock_file.__aenter__.return_value = mock_file
 
     # when
     with patch(
         "aiofiles.open",
-        return_value=mock_aiofiles_open,
-    ) as mock_open:
-        await dc.save_bounding_box(
-            bounding_box=bounding_box,
-            base_path=base_path,
-        )
+        return_value=mock_file,
+    ) as mock_open, patch(
+        "yaml.dump",
+        return_value="mocked_yaml_data",
+    ) as mock_dump:
+        await dc.save_bounding_box(bounding_box, base_path)
 
         # then
-        bounding_box_path = base_path.joinpath(dc.BOUNDING_BOX_FILE_NAME)
-        mock_open.assert_called_once_with(bounding_box_path.as_posix(), "w")
-        mock_file.write.assert_called_once_with(yaml.dump(bounding_box))
+        # 올바른 경로에 파일 생성 시도
+        # YAML 직렬화가 올바른 데이터로 수행
+        # 비동기 쓰기 작업이 정상적으로 호출
+        mock_open.assert_called_once_with(expected_path.as_posix(), "w")
+        mock_dump.assert_called_once_with(bounding_box)
+        mock_file.write.assert_awaited_once_with("mocked_yaml_data")
