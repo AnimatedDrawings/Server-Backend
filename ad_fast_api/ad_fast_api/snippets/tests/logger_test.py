@@ -1,4 +1,4 @@
-from ad_fast_api.snippets.sources.logger import setup_logger, LOG_FILE_NAME
+from ad_fast_api.snippets.sources.ad_logger import setup_logger, LOG_FILE_NAME
 from pathlib import Path
 
 

@@ -1,5 +1,5 @@
 import pytest
-from ad_fast_api.snippets.sources.logger import setup_logger
+from ad_fast_api.snippets.sources.ad_logger import setup_logger
 from pathlib import Path
 
 

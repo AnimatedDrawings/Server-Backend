@@ -1,32 +1,22 @@
 import cv2
 from pathlib import Path
-from ad_fast_api.domain.upload_drawing.sources.features.configure_work_dir import (
-    ORIGIN_IMAGE_NAME,
+from ad_fast_api.domain.upload_drawing.sources.helpers import (
+    upload_drawing_strings as uds,
+)
+from ad_fast_api.domain.upload_drawing.sources.helpers import (
+    upload_drawing_exception as ude,
 )
 from ad_fast_api.workspace.sources.work_dir import get_base_path
 from typing import Optional
 from logging import Logger
-from ad_fast_api.snippets.sources.logger import setup_logger
+from ad_fast_api.snippets.sources.ad_logger import setup_logger
 import numpy as np
 import httpx
 from numpy.typing import NDArray
 import json
 import yaml
 import aiofiles
-
-
-TORCHSERVE_URL = "http://torchserve:8080/predictions/drawn_humanoid_detector"
-BOUNDING_BOX_FILE_NAME = "bounding_box.yaml"
-
-
-IMAGE_SHAPE_ERROR = "image must have 3 channels (rgb). Found {len_shape}"
-SEND_TO_TORCHSERVE_ERROR = "Failed to get bounding box, please check if the 'docker_torchserve' is running and healthy, resp: {resp}"
-DETECTION_ERROR = "Error performing detection. Check that drawn_humanoid_detector.mar was properly downloaded. Response: {detection_results}"
-NO_DETECTION_ERROR = "Could not detect any drawn humanoids in the image. Aborting"
-REPORT_HIGHEST_SCORE_DETECTION = (
-    "Detected {count} humanoids in image. Using detection with highest score {score}."
-)
-CALCULATE_BOUNDING_BOX_ERROR = "Error calculating bounding box. Error: {error}"
+from fastapi import HTTPException
 
 
 def check_image_is_rgb(
@@ -34,13 +24,13 @@ def check_image_is_rgb(
     logger: Logger,
     origin_image_name: Optional[str] = None,
 ) -> NDArray:
-    origin_image_path = base_path.joinpath(origin_image_name or ORIGIN_IMAGE_NAME)
+    origin_image_path = base_path.joinpath(origin_image_name or uds.ORIGIN_IMAGE_NAME)
 
     img = cv2.imread(origin_image_path.as_posix())
 
     # ensure it's rgb
     if len(img.shape) != 3:
-        msg = IMAGE_SHAPE_ERROR.format(
+        msg = uds.IMAGE_SHAPE_ERROR.format(
             len_shape=len(
                 img.shape,
             )
@@ -74,16 +64,16 @@ async def send_to_torchserve(
     async with httpx.AsyncClient(verify=False) as client:
         try:
             resp = await client.post(
-                url or TORCHSERVE_URL,
+                url or uds.TORCHSERVE_URL,
                 files=request_data,
             )
         except Exception as e:
-            msg = SEND_TO_TORCHSERVE_ERROR.format(resp=str(e))
+            msg = uds.SEND_TO_TORCHSERVE_ERROR.format(resp=str(e))
             logger.critical(msg)
             raise Exception(msg)
 
         if resp.status_code >= 300:
-            msg = SEND_TO_TORCHSERVE_ERROR.format(resp=resp)
+            msg = uds.SEND_TO_TORCHSERVE_ERROR.format(resp=resp)
             logger.critical(msg)
             raise Exception(msg)
 
@@ -100,7 +90,7 @@ def check_detection_results(
         and "code" in detection_results.keys()
         and detection_results["code"] == 404
     ):
-        msg = DETECTION_ERROR.format(
+        msg = uds.DETECTION_ERROR.format(
             detection_results=detection_results,
         )
         logger.critical(msg)
@@ -116,12 +106,12 @@ def sort_detection_results(
     detection_results.sort(key=lambda x: x["score"], reverse=True)
 
     if len(detection_results) == 0:
-        msg = NO_DETECTION_ERROR
+        msg = uds.NO_DETECTION_ERROR
         logger.critical(msg)
         raise Exception(msg)
 
     # otherwise, report # detected and score of highest.
-    msg = REPORT_HIGHEST_SCORE_DETECTION.format(
+    msg = uds.REPORT_HIGHEST_SCORE_DETECTION.format(
         count=len(detection_results),
         score=detection_results[0]["score"],
     )
@@ -138,7 +128,7 @@ def calculate_bounding_box(
         l, t, r, b = [round(x) for x in bbox]
         bounding_box = {"left": l, "top": t, "right": r, "bottom": b}
     except Exception as e:
-        msg = CALCULATE_BOUNDING_BOX_ERROR.format(
+        msg = uds.CALCULATE_BOUNDING_BOX_ERROR.format(
             error=e,
         )
         logger.critical(msg)
@@ -152,7 +142,7 @@ async def save_bounding_box(
     base_path: Path,
 ):
     # dump the bounding box results to file asynchronously
-    bounding_box_path = base_path.joinpath(BOUNDING_BOX_FILE_NAME)
+    bounding_box_path = base_path.joinpath(uds.BOUNDING_BOX_FILE_NAME)
     content = yaml.dump(bounding_box)
     async with aiofiles.open(bounding_box_path.as_posix(), "w") as f:
         await f.write(content)
@@ -165,10 +155,17 @@ async def detect_character(ad_id: str):
         base_path=base_path,
     )
 
-    img = check_image_is_rgb(
-        base_path=base_path,
-        logger=logger,
-    )
+    try:
+        img = check_image_is_rgb(
+            base_path=base_path,
+            logger=logger,
+        )
+    except Exception as e:
+        raise HTTPException(
+            status_code=ude.IMAGE_IS_NOT_RGB.status_code(),
+            detail=ude.IMAGE_IS_NOT_RGB.detail(),
+        )
+
     img = resize_image(img=img)
 
     resp = await send_to_torchserve(

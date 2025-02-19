@@ -4,11 +4,16 @@ from fastapi import UploadFile, HTTPException
 from io import BytesIO
 from ad_fast_api.domain.upload_drawing.sources.features import configure_work_dir as cwd
 from ad_fast_api.snippets.testings import mock_ad_time
-from pathlib import Path
 from ad_fast_api.domain.upload_drawing.testings import (
-    mock_upload_drawing_feature as mudf,
+    mock_configure_work_dir as mudf,
 )
 from ad_fast_api.domain.upload_drawing.tests.conftest import TEST_DIR
+from ad_fast_api.domain.upload_drawing.sources.helpers import (
+    upload_drawing_strings as uds,
+)
+from ad_fast_api.domain.upload_drawing.sources.helpers import (
+    upload_drawing_exception as ude,
+)
 
 
 def test_make_ad_id():
@@ -63,7 +68,7 @@ def test_get_file_bytes():
 async def test_save_origin_image():
     # given
     base_path = TEST_DIR
-    origin_image_path = base_path.joinpath(cwd.ORIGIN_IMAGE_NAME)
+    origin_image_path = base_path.joinpath(uds.ORIGIN_IMAGE_NAME)
     file_bytes = b"Hello, Async World!"
     mock_file = AsyncMock()
     mock_file.__aenter__.return_value = mock_file
@@ -138,8 +143,8 @@ async def test_save_image_fail_file_bytes_is_empty():
             )
         )
     except HTTPException as e:
-        assert e.status_code == 400
-        assert e.detail == cwd.UPLOADED_FILE_EMPTY_OR_INVALID
+        assert e.status_code == ude.UPLOADED_FILE_EMPTY_OR_INVALID.status_code()
+        assert e.detail == ude.UPLOADED_FILE_EMPTY_OR_INVALID.detail()
 
     # teardown
     patcher1.stop()

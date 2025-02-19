@@ -110,4 +110,5 @@ async def upload_drawing(file: UploadFile = File(...)):
             status_code=500,
             detail=str(e),
         )
+
     return {"ad_id": ad_id}

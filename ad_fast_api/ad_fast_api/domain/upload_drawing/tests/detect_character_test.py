@@ -3,12 +3,17 @@ import json
 import httpx
 import respx
 import numpy as np
+from fastapi import HTTPException
 from ad_fast_api.domain.upload_drawing.tests.conftest import TEST_DIR
 from unittest.mock import patch, Mock, AsyncMock
 from ad_fast_api.domain.upload_drawing.sources.features import detect_character as dc
+from ad_fast_api.domain.upload_drawing.sources.helpers import (
+    upload_drawing_strings as uds,
+)
+from ad_fast_api.domain.upload_drawing.sources.helpers import (
+    upload_drawing_exception as ude,
+)
 from ad_fast_api.snippets.testings.mock_logger import mock_logger
-
-from pathlib import Path
 
 
 def test_check_image_is_rgb_success():
@@ -46,7 +51,7 @@ def test_check_image_is_rgb_raises_exception(mock_logger):
                 origin_image_name=origin_image_name,
             )
             # then
-            expected_msg = dc.IMAGE_SHAPE_ERROR.format(len_shape=2)
+            expected_msg = uds.IMAGE_SHAPE_ERROR.format(len_shape=2)
             assert expected_msg == str(excinfo.value)
             mock_logger.critical.assert_called_once_with(expected_msg)
 
@@ -88,7 +93,7 @@ def test_resize_image_when_smaller_than_1000():
 async def test_send_to_torchserve_success(mock_logger):
     # given
     mock_response = httpx.Response(200, content=b'{"result": "success"}')
-    route = respx.post(dc.TORCHSERVE_URL).mock(return_value=mock_response)
+    route = respx.post(uds.TORCHSERVE_URL).mock(return_value=mock_response)
 
     # when
     test_img = np.zeros((224, 224, 3), dtype=np.uint8)
@@ -106,7 +111,7 @@ async def test_send_to_torchserve_success(mock_logger):
 async def test_send_to_torchserve_fail_status_code_300(mock_logger):
     # given
     mock_response = httpx.Response(300, content=b"Bad Request")
-    respx.post(dc.TORCHSERVE_URL).mock(return_value=mock_response)
+    respx.post(uds.TORCHSERVE_URL).mock(return_value=mock_response)
     test_img = np.zeros((224, 224, 3), dtype=np.uint8)
 
     # when
@@ -114,7 +119,7 @@ async def test_send_to_torchserve_fail_status_code_300(mock_logger):
         await dc.send_to_torchserve(test_img, mock_logger)
 
     # then
-    expected_msg = dc.SEND_TO_TORCHSERVE_ERROR.format(resp=mock_response)
+    expected_msg = uds.SEND_TO_TORCHSERVE_ERROR.format(resp=mock_response)
     assert str(exc_info.value) == expected_msg
     mock_logger.critical.assert_called_once_with(expected_msg)
 
@@ -124,7 +129,7 @@ async def test_send_to_torchserve_fail_status_code_300(mock_logger):
 async def test_send_to_torchserve_fail_connection_error(mock_logger):
     # given
     test_exception = httpx.ConnectError("Connection failed")
-    respx.post(dc.TORCHSERVE_URL).mock(side_effect=test_exception)
+    respx.post(uds.TORCHSERVE_URL).mock(side_effect=test_exception)
     test_img = np.zeros((224, 224, 3), dtype=np.uint8)
 
     # when
@@ -132,7 +137,7 @@ async def test_send_to_torchserve_fail_connection_error(mock_logger):
         await dc.send_to_torchserve(test_img, mock_logger)
 
     # then
-    expected_msg = dc.SEND_TO_TORCHSERVE_ERROR.format(resp=str(test_exception))
+    expected_msg = uds.SEND_TO_TORCHSERVE_ERROR.format(resp=str(test_exception))
     assert str(exc_info.value) == expected_msg
     mock_logger.critical.assert_called_once_with(expected_msg)
 
@@ -167,7 +172,7 @@ def test_check_detection_results_failed(mock_logger):
         )
 
     # then
-    expected_msg = dc.DETECTION_ERROR.format(detection_results=error_response)
+    expected_msg = uds.DETECTION_ERROR.format(detection_results=error_response)
     assert expected_msg == str(exc_info.value)
     mock_logger.critical.assert_called_once_with(expected_msg)
 
@@ -208,7 +213,7 @@ def test_sort_detection_results_success(mock_logger):
     assert detection_results[2]["score"] == 0.7
 
     # Check if logger.info was called with correct message
-    expected_msg = dc.REPORT_HIGHEST_SCORE_DETECTION.format(
+    expected_msg = uds.REPORT_HIGHEST_SCORE_DETECTION.format(
         count=len(detection_results),
         score=detection_results[0]["score"],
     )
@@ -227,7 +232,7 @@ def test_sort_detection_results_empty_list(mock_logger):
         )
 
     # then
-    expected_msg = dc.NO_DETECTION_ERROR
+    expected_msg = uds.NO_DETECTION_ERROR
     assert expected_msg == str(exc_info.value)
     mock_logger.critical.assert_called_once_with(expected_msg)
 
@@ -248,7 +253,7 @@ def test_sort_detection_results_single_item(mock_logger):
     assert detection_results[0]["score"] == 0.8
 
     # Check if logger.info was called with correct message
-    expected_msg = dc.REPORT_HIGHEST_SCORE_DETECTION.format(
+    expected_msg = uds.REPORT_HIGHEST_SCORE_DETECTION.format(
         count=1,
         score=0.8,
     )
@@ -284,7 +289,7 @@ def test_calculate_bounding_box_failed(mock_logger):
 
     # then
     key = "'bbox'"
-    expected_msg = dc.CALCULATE_BOUNDING_BOX_ERROR.format(error=key)
+    expected_msg = uds.CALCULATE_BOUNDING_BOX_ERROR.format(error=key)
     assert expected_msg == str(exc_info.value)
     mock_logger.critical.assert_called_once_with(expected_msg)
 
@@ -294,7 +299,7 @@ async def test_save_bounding_box_success():
     # given
     bounding_box = {"left": 11, "top": 20, "right": 31, "bottom": 40}
     base_path = TEST_DIR
-    expected_path = base_path.joinpath(dc.BOUNDING_BOX_FILE_NAME)
+    expected_path = base_path.joinpath(uds.BOUNDING_BOX_FILE_NAME)
     mock_file = AsyncMock()
     mock_file.__aenter__.return_value = mock_file
     dumped_yaml = "mocked_yaml_data"
@@ -316,3 +321,117 @@ async def test_save_bounding_box_success():
         mock_open.assert_called_once_with(expected_path.as_posix(), "w")
         mock_dump.assert_called_once_with(bounding_box)
         mock_file.write.assert_awaited_once_with(dumped_yaml)
+
+
+@pytest.mark.asyncio
+async def test_detect_character_success():
+    # given
+    ad_id = "test_ad_id"
+    fake_base_path = TEST_DIR
+    fake_logger = Mock()
+    fake_img = "fake_image"  # check_image_is_rgb가 반환할 가짜 이미지 (string, numpy array 등 상관없음)
+    fake_img_after_resize = "resized_image"  # resize_image 결과
+    fake_response = Mock()  # send_to_torchserve가 반환할 응답 객체
+    fake_detection_results = [
+        "detection1",
+        "detection2",
+    ]  # check_detection_results 반환값
+    fake_bounding_box = {
+        "left": 1,
+        "top": 2,
+        "right": 3,
+        "bottom": 4,
+    }  # calculate_bounding_box 반환값
+
+    # 내부 의존함수 모두 patch 처리
+    with patch.object(
+        dc, "get_base_path", return_value=fake_base_path
+    ) as mock_get_base_path, patch.object(
+        dc, "setup_logger", return_value=fake_logger
+    ) as mock_setup_logger, patch.object(
+        dc, "check_image_is_rgb", return_value=fake_img
+    ) as mock_check_image, patch.object(
+        dc, "resize_image", return_value=fake_img_after_resize
+    ) as mock_resize, patch.object(
+        dc, "send_to_torchserve", new=AsyncMock(return_value=fake_response)
+    ) as mock_send, patch.object(
+        dc, "check_detection_results", return_value=fake_detection_results
+    ) as mock_check_detections, patch.object(
+        dc, "sort_detection_results"
+    ) as mock_sort, patch.object(
+        dc, "calculate_bounding_box", return_value=fake_bounding_box
+    ) as mock_calc, patch.object(
+        dc, "save_bounding_box", new=AsyncMock()
+    ) as mock_save:
+
+        # when
+        await dc.detect_character(ad_id)
+
+    # then: 함수들이 올바른 인자와 순서로 호출되었는지 확인
+    mock_get_base_path.assert_called_once_with(ad_id=ad_id)
+    mock_setup_logger.assert_called_once_with(base_path=fake_base_path)
+    mock_check_image.assert_called_once_with(
+        base_path=fake_base_path, logger=fake_logger
+    )
+    mock_resize.assert_called_once_with(img=fake_img)
+    mock_send.assert_awaited_once_with(img=fake_img_after_resize, logger=fake_logger)
+    mock_check_detections.assert_called_once_with(
+        resp=fake_response, logger=fake_logger
+    )
+    mock_sort.assert_called_once_with(
+        detection_results=fake_detection_results, logger=fake_logger
+    )
+    mock_calc.assert_called_once_with(
+        detection_results=fake_detection_results, logger=fake_logger
+    )
+    mock_save.assert_awaited_once_with(
+        bounding_box=fake_bounding_box, base_path=fake_base_path
+    )
+
+
+@pytest.mark.asyncio
+async def test_detect_character_fail_image_is_not_rgb():
+    # given
+    ad_id = "test_ad_id"
+    fake_base_path = TEST_DIR
+    fake_logger = Mock()
+    fake_img_after_resize = "resized_image"  # resize_image 결과
+    fake_response = Mock()  # send_to_torchserve가 반환할 응답 객체
+    fake_detection_results = [
+        "detection1",
+        "detection2",
+    ]  # check_detection_results 반환값
+    fake_bounding_box = {
+        "left": 1,
+        "top": 2,
+        "right": 3,
+        "bottom": 4,
+    }  # calculate_bounding_box 반환값
+
+    # 내부 의존함수 모두 patch 처리
+    with patch.object(
+        dc, "get_base_path", return_value=fake_base_path
+    ) as mock_get_base_path, patch.object(
+        dc, "setup_logger", return_value=fake_logger
+    ) as mock_setup_logger, patch.object(
+        dc, "check_image_is_rgb", side_effect=Exception("Image is not RGB")
+    ) as mock_check_image, patch.object(
+        dc, "resize_image", return_value=fake_img_after_resize
+    ) as mock_resize, patch.object(
+        dc, "send_to_torchserve", new=AsyncMock(return_value=fake_response)
+    ) as mock_send, patch.object(
+        dc, "check_detection_results", return_value=fake_detection_results
+    ) as mock_check_detections, patch.object(
+        dc, "sort_detection_results"
+    ) as mock_sort, patch.object(
+        dc, "calculate_bounding_box", return_value=fake_bounding_box
+    ) as mock_calc, patch.object(
+        dc, "save_bounding_box", new=AsyncMock()
+    ) as mock_save:
+
+        # when
+        try:
+            await dc.detect_character(ad_id)
+        except HTTPException as e:
+            assert e.status_code == ude.IMAGE_IS_NOT_RGB.status_code()
+            assert e.detail == ude.IMAGE_IS_NOT_RGB.detail()

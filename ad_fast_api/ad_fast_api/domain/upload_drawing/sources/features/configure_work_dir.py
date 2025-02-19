@@ -5,10 +5,12 @@ from ad_fast_api.workspace.sources.work_dir import get_base_path
 from pathlib import Path
 from fastapi import UploadFile, HTTPException
 from typing import Optional
-
-
-ORIGIN_IMAGE_NAME = "image.png"
-UPLOADED_FILE_EMPTY_OR_INVALID = "Uploaded file is empty or invalid."
+from ad_fast_api.domain.upload_drawing.sources.helpers import (
+    upload_drawing_strings as uds,
+)
+from ad_fast_api.domain.upload_drawing.sources.helpers import (
+    upload_drawing_exception as ude,
+)
 
 
 def make_ad_id(
@@ -41,7 +43,7 @@ async def save_origin_image(
     base_path: Path,
     file_bytes: bytes,
 ):
-    origin_image_path = base_path.joinpath(ORIGIN_IMAGE_NAME)
+    origin_image_path = base_path.joinpath(uds.ORIGIN_IMAGE_NAME)
     async with aiofiles.open(origin_image_path.as_posix(), "wb") as f:
         await f.write(file_bytes)
 
@@ -50,8 +52,8 @@ async def save_image(file: UploadFile) -> str:
     file_bytes = get_file_bytes(file=file)
     if not file_bytes:
         raise HTTPException(
-            status_code=400,
-            detail=UPLOADED_FILE_EMPTY_OR_INVALID,
+            status_code=ude.UPLOADED_FILE_EMPTY_OR_INVALID.status_code(),
+            detail=ude.UPLOADED_FILE_EMPTY_OR_INVALID.detail(),
         )
 
     ad_id = make_ad_id()
