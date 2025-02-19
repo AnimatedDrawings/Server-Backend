@@ -9,10 +9,10 @@ from logging import Logger
 from ad_fast_api.snippets.sources.logger import setup_logger
 import numpy as np
 import httpx
-from httpx import Response
 from numpy.typing import NDArray
 import json
 import yaml
+import aiofiles
 
 
 TORCHSERVE_URL = "http://torchserve:8080/predictions/drawn_humanoid_detector"
@@ -62,29 +62,36 @@ def resize_image(img: NDArray) -> NDArray:
     return img
 
 
-def send_to_torchserve(
+async def send_to_torchserve(
     img: NDArray,
     logger: Logger,
     url: Optional[str] = None,
-) -> Response:
+) -> httpx.Response:
     # convert to bytes and send to torchserve
     img_b = cv2.imencode(".png", img)[1].tobytes()
     request_data = {"data": img_b}
-    resp = httpx.post(
-        url or TORCHSERVE_URL,
-        files=request_data,
-        verify=False,
-    )
-    if resp is None or resp.status_code >= 300:
-        msg = SEND_TO_TORCHSERVE_ERROR.format(resp=resp)
-        logger.critical(msg)
-        raise Exception(msg)
 
-    return resp
+    async with httpx.AsyncClient(verify=False) as client:
+        try:
+            resp = await client.post(
+                url or TORCHSERVE_URL,
+                files=request_data,
+            )
+        except Exception as e:
+            msg = SEND_TO_TORCHSERVE_ERROR.format(resp=str(e))
+            logger.critical(msg)
+            raise Exception(msg)
+
+        if resp.status_code >= 300:
+            msg = SEND_TO_TORCHSERVE_ERROR.format(resp=resp)
+            logger.critical(msg)
+            raise Exception(msg)
+
+        return resp
 
 
 def check_detection_results(
-    resp: Response,
+    resp: httpx.Response,
     logger: Logger,
 ):
     detection_results = json.loads(resp.content)
@@ -140,17 +147,17 @@ def calculate_bounding_box(
     return bounding_box
 
 
-def save_bounding_box(
+async def save_bounding_box(
     bounding_box: dict,
     base_path: Path,
 ):
-    # dump the bounding box results to file
-    bouding_box_path = base_path.joinpath(BOUNDING_BOX_FILE_NAME)
-    with open(bouding_box_path.as_posix(), "w") as f:
-        yaml.dump(bounding_box, f)
+    # dump the bounding box results to file asynchronously
+    bounding_box_path = base_path.joinpath(BOUNDING_BOX_FILE_NAME)
+    async with aiofiles.open(bounding_box_path.as_posix(), "w") as f:
+        await f.write(yaml.dump(bounding_box))
 
 
-def detect_character(ad_id: str):
+async def detect_character(ad_id: str):
     base_path = get_base_path(ad_id=ad_id)
 
     logger = setup_logger(
@@ -163,7 +170,7 @@ def detect_character(ad_id: str):
     )
     img = resize_image(img=img)
 
-    resp = send_to_torchserve(
+    resp = await send_to_torchserve(
         img=img,
         logger=logger,
     )
@@ -181,7 +188,7 @@ def detect_character(ad_id: str):
         detection_results=detection_results,
         logger=logger,
     )
-    save_bounding_box(
+    await save_bounding_box(
         bounding_box=bounding_box,
         base_path=base_path,
     )
