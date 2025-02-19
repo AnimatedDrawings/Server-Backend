@@ -297,6 +297,7 @@ async def test_save_bounding_box_success():
     expected_path = base_path.joinpath(dc.BOUNDING_BOX_FILE_NAME)
     mock_file = AsyncMock()
     mock_file.__aenter__.return_value = mock_file
+    dumped_yaml = "mocked_yaml_data"
 
     # when
     with patch(
@@ -304,7 +305,7 @@ async def test_save_bounding_box_success():
         return_value=mock_file,
     ) as mock_open, patch(
         "yaml.dump",
-        return_value="mocked_yaml_data",
+        return_value=dumped_yaml,
     ) as mock_dump:
         await dc.save_bounding_box(bounding_box, base_path)
 
@@ -314,4 +315,4 @@ async def test_save_bounding_box_success():
         # 비동기 쓰기 작업이 정상적으로 호출
         mock_open.assert_called_once_with(expected_path.as_posix(), "w")
         mock_dump.assert_called_once_with(bounding_box)
-        mock_file.write.assert_awaited_once_with("mocked_yaml_data")
+        mock_file.write.assert_awaited_once_with(dumped_yaml)

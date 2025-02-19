@@ -3,11 +3,12 @@ from uuid import uuid4
 from datetime import datetime
 from ad_fast_api.workspace.sources.work_dir import get_base_path
 from pathlib import Path
-from fastapi import UploadFile
+from fastapi import UploadFile, HTTPException
 from typing import Optional
 
 
 ORIGIN_IMAGE_NAME = "image.png"
+UPLOADED_FILE_EMPTY_OR_INVALID = "Uploaded file is empty or invalid."
 
 
 def make_ad_id(
@@ -41,13 +42,19 @@ async def save_origin_image(
     file_bytes: bytes,
 ):
     origin_image_path = base_path.joinpath(ORIGIN_IMAGE_NAME)
-    async with aiofiles.open(origin_image_path.as_posix(), mode="wb") as f:
+    async with aiofiles.open(origin_image_path.as_posix(), "wb") as f:
         await f.write(file_bytes)
 
 
 async def save_image(file: UploadFile) -> str:
+    file_bytes = get_file_bytes(file=file)
+    if not file_bytes:
+        raise HTTPException(
+            status_code=400,
+            detail=UPLOADED_FILE_EMPTY_OR_INVALID,
+        )
+
     ad_id = make_ad_id()
     base_path = create_base_dir(ad_id=ad_id)
-    file_bytes = get_file_bytes(file=file)
     await save_origin_image(base_path=base_path, file_bytes=file_bytes)
     return ad_id

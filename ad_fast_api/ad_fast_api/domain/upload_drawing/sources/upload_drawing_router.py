@@ -88,3 +88,26 @@
 #             status_code=500,
 #             detail=str(e),
 #         )
+
+
+from fastapi import APIRouter, UploadFile, File, HTTPException
+from ad_fast_api.domain.upload_drawing.sources.features.configure_work_dir import (
+    save_image,
+)
+
+
+router = APIRouter()
+
+
+@router.post("/upload_drawing")
+async def upload_drawing(file: UploadFile = File(...)):
+    try:
+        ad_id = await save_image(file=file)
+    except HTTPException as he:
+        raise he
+    except Exception as e:
+        raise HTTPException(
+            status_code=500,
+            detail=str(e),
+        )
+    return {"ad_id": ad_id}
