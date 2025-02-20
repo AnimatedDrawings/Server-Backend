@@ -1,20 +1,25 @@
 import pytest
 from ad_fast_api.snippets.sources.ad_logger import setup_logger
-from pathlib import Path
-
-
-TEST_DIR = Path(__file__).parent
-LOG_FILE_NAME = "test.log"
+from ad_fast_api.main import app
+from fastapi.testclient import TestClient
+from ad_fast_api.domain.upload_drawing.testings import fake_upload_drawing as fud
 
 
 @pytest.fixture(scope="session")
 def mock_logger():
     logger = setup_logger(
-        base_path=TEST_DIR,
-        log_file_name=LOG_FILE_NAME,
+        base_path=fud.fake_workspace_files_path,
+        log_file_name=fud.fake_log_file_name,
     )
 
     yield logger
 
-    TEST_DIR.joinpath(LOG_FILE_NAME).unlink()
+    fud.fake_workspace_files_path.joinpath(fud.fake_log_file_name).unlink()
     del logger
+
+
+@pytest.fixture(scope="session")
+def mock_client():
+    client = TestClient(app)
+    yield client
+    del client

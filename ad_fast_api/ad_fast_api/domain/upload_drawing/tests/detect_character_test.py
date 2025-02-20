@@ -4,14 +4,14 @@ import httpx
 import respx
 import numpy as np
 from fastapi import HTTPException
-from ad_fast_api.domain.upload_drawing.tests.conftest import TEST_DIR
+from ad_fast_api.domain.upload_drawing.testings import fake_upload_drawing as fud
 from unittest.mock import patch, Mock, AsyncMock
 from ad_fast_api.domain.upload_drawing.sources.features import detect_character as dc
 from ad_fast_api.domain.upload_drawing.sources.helpers import (
     upload_drawing_strings as uds,
 )
 from ad_fast_api.domain.upload_drawing.sources.helpers import (
-    upload_drawing_exception as ude,
+    upload_drawing_http_exception as ude,
 )
 from ad_fast_api.snippets.testings.mock_logger import mock_logger
 
@@ -27,7 +27,7 @@ def test_check_image_is_rgb_success():
     with patch("cv2.imread", return_value=mock_image):
         # when
         img = dc.check_image_is_rgb(
-            base_path=TEST_DIR,
+            base_path=fud.fake_workspace_files_path,
             logger=mock_logger,
             origin_image_name=origin_image_name,
         )
@@ -46,7 +46,7 @@ def test_check_image_is_rgb_raises_exception(mock_logger):
         # when
         with pytest.raises(Exception) as excinfo:
             dc.check_image_is_rgb(
-                base_path=TEST_DIR,
+                base_path=fud.fake_workspace_files_path,
                 logger=mock_logger,
                 origin_image_name=origin_image_name,
             )
@@ -298,7 +298,7 @@ def test_calculate_bounding_box_failed(mock_logger):
 async def test_save_bounding_box_success():
     # given
     bounding_box = {"left": 11, "top": 20, "right": 31, "bottom": 40}
-    base_path = TEST_DIR
+    base_path = fud.fake_workspace_files_path
     expected_path = base_path.joinpath(uds.BOUNDING_BOX_FILE_NAME)
     mock_file = AsyncMock()
     mock_file.__aenter__.return_value = mock_file
@@ -327,7 +327,7 @@ async def test_save_bounding_box_success():
 async def test_detect_character_success():
     # given
     ad_id = "test_ad_id"
-    fake_base_path = TEST_DIR
+    fake_base_path = fud.fake_workspace_files_path
     fake_logger = Mock()
     fake_img = "fake_image"  # check_image_is_rgb가 반환할 가짜 이미지 (string, numpy array 등 상관없음)
     fake_img_after_resize = "resized_image"  # resize_image 결과
@@ -393,7 +393,7 @@ async def test_detect_character_success():
 async def test_detect_character_fail_image_is_not_rgb():
     # given
     ad_id = "test_ad_id"
-    fake_base_path = TEST_DIR
+    fake_base_path = fud.fake_workspace_files_path
     fake_logger = Mock()
     fake_img_after_resize = "resized_image"  # resize_image 결과
     fake_response = Mock()  # send_to_torchserve가 반환할 응답 객체

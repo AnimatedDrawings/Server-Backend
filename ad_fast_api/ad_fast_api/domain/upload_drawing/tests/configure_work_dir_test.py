@@ -6,13 +6,13 @@ from ad_fast_api.domain.upload_drawing.sources.features import configure_work_di
 from ad_fast_api.snippets.testings import mock_ad_time
 from ad_fast_api.domain.upload_drawing.testings import (
     mock_configure_work_dir as mudf,
+    fake_upload_drawing as fud,
 )
-from ad_fast_api.domain.upload_drawing.tests.conftest import TEST_DIR
 from ad_fast_api.domain.upload_drawing.sources.helpers import (
     upload_drawing_strings as uds,
 )
 from ad_fast_api.domain.upload_drawing.sources.helpers import (
-    upload_drawing_exception as ude,
+    upload_drawing_http_exception as ude,
 )
 
 
@@ -39,7 +39,7 @@ def test_create_base_dir():
     # when
     base_path = cwd.create_base_dir(
         ad_id=ad_id,
-        files_path=TEST_DIR,
+        files_path=fud.fake_workspace_files_path,
     )
 
     # then
@@ -67,7 +67,7 @@ def test_get_file_bytes():
 @pytest.mark.asyncio
 async def test_save_origin_image():
     # given
-    base_path = TEST_DIR
+    base_path = fud.fake_workspace_files_path
     origin_image_path = base_path.joinpath(uds.ORIGIN_IMAGE_NAME)
     file_bytes = b"Hello, Async World!"
     mock_file = AsyncMock()
@@ -92,62 +92,48 @@ async def test_save_origin_image():
 async def test_save_image_success():
     # given
     ad_id = "1234567890_hexcode"
-    patcher1 = mudf.patcher_make_ad_id(return_value=ad_id)
-    patcher2 = mudf.patcher_create_base_dir(return_value=TEST_DIR.joinpath(ad_id))
-    patcher3 = mudf.patcher_get_file_bytes(return_value=b"Hello, Async World!")
-    patcher4 = mudf.patcher_save_origin_image(return_value=None)
-
-    patcher1.start()
-    patcher2.start()
-    patcher3.start()
-    patcher4.start()
-
-    # when
-    expect_ad_id = await cwd.save_image(
-        file=UploadFile(
-            filename="test.png",
-            file=BytesIO(b"Hello, Async World!"),
+    with (
+        mudf.patcher_make_ad_id(return_value=ad_id),
+        mudf.patcher_create_base_dir(
+            return_value=fud.fake_workspace_files_path.joinpath(ad_id)
+        ),
+        mudf.patcher_get_file_bytes(return_value=b"Hello, Async World!"),
+        mudf.patcher_save_origin_image(return_value=None),
+    ):
+        # when
+        expect_ad_id = await cwd.save_image(
+            file=UploadFile(
+                filename="test.png",
+                file=BytesIO(b"Hello, Async World!"),
+            )
         )
-    )
-
-    # then
-    assert expect_ad_id == ad_id
-
-    # teardown
-    patcher1.stop()
-    patcher2.stop()
-    patcher3.stop()
-    patcher4.stop()
+        # then
+        assert expect_ad_id == ad_id
 
 
 @pytest.mark.asyncio
 async def test_save_image_fail_file_bytes_is_empty():
     # given
     ad_id = "1234567890_hexcode"
-    patcher1 = mudf.patcher_make_ad_id(return_value=ad_id)
-    patcher2 = mudf.patcher_create_base_dir(return_value=TEST_DIR.joinpath(ad_id))
-    patcher3 = mudf.patcher_get_file_bytes(return_value=None)
-    patcher4 = mudf.patcher_save_origin_image(return_value=None)
-
-    patcher1.start()
-    patcher2.start()
-    patcher3.start()
-    patcher4.start()
-
-    # when
-    try:
-        await cwd.save_image(
-            file=UploadFile(
-                filename="test.png",
-                file=BytesIO(b"Hello, Async World!"),
+    with (
+        mudf.patcher_make_ad_id(return_value=ad_id),
+        mudf.patcher_create_base_dir(
+            return_value=fud.fake_workspace_files_path.joinpath(ad_id)
+        ),
+        mudf.patcher_get_file_bytes(return_value=None),
+        mudf.patcher_save_origin_image(return_value=None),
+    ):
+        # when/then
+        with pytest.raises(HTTPException) as exc_info:
+            await cwd.save_image(
+                file=UploadFile(
+                    filename="test.png",
+                    file=BytesIO(b"Hello, Async World!"),
+                )
             )
+        # then
+        assert (
+            exc_info.value.status_code
+            == ude.UPLOADED_FILE_EMPTY_OR_INVALID.status_code()
         )
-    except HTTPException as e:
-        assert e.status_code == ude.UPLOADED_FILE_EMPTY_OR_INVALID.status_code()
-        assert e.detail == ude.UPLOADED_FILE_EMPTY_OR_INVALID.detail()
-
-    # teardown
-    patcher1.stop()
-    patcher2.stop()
-    patcher3.stop()
-    patcher4.stop()
+        assert exc_info.value.detail == ude.UPLOADED_FILE_EMPTY_OR_INVALID.detail()

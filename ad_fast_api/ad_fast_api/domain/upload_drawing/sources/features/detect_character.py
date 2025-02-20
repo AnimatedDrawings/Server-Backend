@@ -4,7 +4,7 @@ from ad_fast_api.domain.upload_drawing.sources.helpers import (
     upload_drawing_strings as uds,
 )
 from ad_fast_api.domain.upload_drawing.sources.helpers import (
-    upload_drawing_exception as ude,
+    upload_drawing_http_exception as ude,
 )
 from ad_fast_api.workspace.sources.work_dir import get_base_path
 from typing import Optional
@@ -148,7 +148,7 @@ async def save_bounding_box(
         await f.write(content)
 
 
-async def detect_character(ad_id: str):
+async def detect_character(ad_id: str) -> dict:
     base_path = get_base_path(ad_id=ad_id)
 
     logger = setup_logger(
@@ -190,3 +190,5 @@ async def detect_character(ad_id: str):
         bounding_box=bounding_box,
         base_path=base_path,
     )
+
+    return bounding_box

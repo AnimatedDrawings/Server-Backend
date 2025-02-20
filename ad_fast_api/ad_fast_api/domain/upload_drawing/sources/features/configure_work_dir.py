@@ -9,7 +9,7 @@ from ad_fast_api.domain.upload_drawing.sources.helpers import (
     upload_drawing_strings as uds,
 )
 from ad_fast_api.domain.upload_drawing.sources.helpers import (
-    upload_drawing_exception as ude,
+    upload_drawing_http_exception as ude,
 )
 
 
