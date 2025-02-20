@@ -16,8 +16,9 @@ router = APIRouter()
 async def upload_drawing(file: UploadFile = File(...)) -> Dict[str, Any]:
     ad_id = await handle_operation(save_image, file=file)
     bounding_box = await handle_operation(detect_character, ad_id=ad_id)
+    bounding_box_dict = bounding_box.model_dump(mode="json")
 
     return {
         "ad_id": ad_id,
-        "bounding_box": bounding_box,
+        "bounding_box": bounding_box_dict,
     }

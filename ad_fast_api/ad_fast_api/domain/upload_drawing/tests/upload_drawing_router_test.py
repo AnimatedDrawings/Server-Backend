@@ -2,9 +2,13 @@ from fastapi import HTTPException
 from unittest.mock import patch, AsyncMock, ANY
 from ad_fast_api.domain.upload_drawing.testings import fake_upload_drawing as fud
 from ad_fast_api.domain.upload_drawing.sources import upload_drawing_router as udr
+from ad_fast_api.domain.schema.sources.schemas import BoundingBox
 
 
 def test_upload_drawing_success(mock_client):
+    # given
+    bounding_box = BoundingBox.mock()
+
     with patch.object(
         udr,
         "save_image",
@@ -12,7 +16,7 @@ def test_upload_drawing_success(mock_client):
     ) as mock_save_image, patch.object(
         udr,
         "detect_character",
-        new=AsyncMock(return_value=fud.fake_bounding_box),
+        new=AsyncMock(return_value=bounding_box),
     ) as mock_detect:
 
         # when
@@ -22,10 +26,11 @@ def test_upload_drawing_success(mock_client):
         )
 
     # then
+    bounding_box_dict = bounding_box.model_dump(mode="json")
     assert response.status_code == 200
     assert response.json() == {
         "ad_id": fud.fake_ad_id,
-        "bounding_box": fud.fake_bounding_box,
+        "bounding_box": bounding_box_dict,
     }
     mock_save_image.assert_awaited_once_with(file=ANY)
     mock_detect.assert_awaited_once_with(ad_id=fud.fake_ad_id)

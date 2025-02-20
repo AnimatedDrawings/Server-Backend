@@ -14,6 +14,7 @@ from ad_fast_api.domain.upload_drawing.sources.helpers import (
     upload_drawing_http_exception as ude,
 )
 from ad_fast_api.snippets.testings.mock_logger import mock_logger
+from ad_fast_api.domain.schema.sources.schemas import BoundingBox
 
 
 def test_check_image_is_rgb_success():
@@ -262,8 +263,14 @@ def test_sort_detection_results_single_item(mock_logger):
 
 def test_calculate_bounding_box_success(mock_logger):
     # given
-    detection_results = [{"bbox": [10.6, 20.3, 30.7, 40.2], "score": 0.9}]
-    expected_bbox = {"left": 11, "top": 20, "right": 31, "bottom": 40}
+    l, t, r, b = 10.6, 20.3, 30.7, 40.2
+    detection_results = [{"bbox": [l, t, r, b], "score": 0.9}]
+    expected_bbox = BoundingBox(
+        left=round(l),
+        top=round(t),
+        right=round(r),
+        bottom=round(b),
+    )
 
     # when
     result = dc.calculate_bounding_box(
@@ -297,7 +304,7 @@ def test_calculate_bounding_box_failed(mock_logger):
 @pytest.mark.asyncio
 async def test_save_bounding_box_success():
     # given
-    bounding_box = {"left": 11, "top": 20, "right": 31, "bottom": 40}
+    bounding_box = BoundingBox.mock()
     base_path = fud.fake_workspace_files_path
     expected_path = base_path.joinpath(uds.BOUNDING_BOX_FILE_NAME)
     mock_file = AsyncMock()
@@ -319,7 +326,7 @@ async def test_save_bounding_box_success():
         # YAML 직렬화가 올바른 데이터로 수행
         # 비동기 쓰기 작업이 정상적으로 호출
         mock_open.assert_called_once_with(expected_path.as_posix(), "w")
-        mock_dump.assert_called_once_with(bounding_box)
+        mock_dump.assert_called_once_with(bounding_box.model_dump(mode="json"))
         mock_file.write.assert_awaited_once_with(dumped_yaml)
 
 

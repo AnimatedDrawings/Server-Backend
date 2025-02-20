@@ -17,6 +17,7 @@ import json
 import yaml
 import aiofiles
 from fastapi import HTTPException
+from ad_fast_api.domain.schema.sources.schemas import BoundingBox
 
 
 def check_image_is_rgb(
@@ -121,12 +122,12 @@ def sort_detection_results(
 def calculate_bounding_box(
     detection_results,
     logger: Logger,
-) -> dict:
+) -> BoundingBox:
     # calculate the coordinates of the character bounding box
     try:
         bbox = np.array(detection_results[0]["bbox"])
         l, t, r, b = [round(x) for x in bbox]
-        bounding_box = {"left": l, "top": t, "right": r, "bottom": b}
+        bounding_box = BoundingBox(left=l, top=t, right=r, bottom=b)
     except Exception as e:
         msg = uds.CALCULATE_BOUNDING_BOX_ERROR.format(
             error=e,
@@ -138,17 +139,18 @@ def calculate_bounding_box(
 
 
 async def save_bounding_box(
-    bounding_box: dict,
+    bounding_box: BoundingBox,
     base_path: Path,
 ):
     # dump the bounding box results to file asynchronously
     bounding_box_path = base_path.joinpath(uds.BOUNDING_BOX_FILE_NAME)
-    content = yaml.dump(bounding_box)
+    bounding_box_dict = bounding_box.model_dump(mode="json")
+    content = yaml.dump(bounding_box_dict)
     async with aiofiles.open(bounding_box_path.as_posix(), "w") as f:
         await f.write(content)
 
 
-async def detect_character(ad_id: str) -> dict:
+async def detect_character(ad_id: str) -> BoundingBox:
     base_path = get_base_path(ad_id=ad_id)
 
     logger = setup_logger(
