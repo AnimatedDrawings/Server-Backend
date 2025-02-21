@@ -1,50 +1,43 @@
-from unittest.mock import AsyncMock, patch
-import aiofiles
-import pytest
+import functools
+import time
+import asyncio
 
 
-@pytest.fixture(scope="function")
-def mock_aiofiles_open_wirte():
-    mock_file = AsyncMock()
-    mock_file.write = AsyncMock()
-    mock_aiofiles_open_aenter = AsyncMock(
-        return_value=mock_file,
-    )
-    mock_aiofiles_open = AsyncMock(
-        __aenter__=mock_aiofiles_open_aenter,
-    )
+def measure_execution_time(func_name: str):
+    def decorator(func):
+        @functools.wraps(func)
+        async def async_wrapper(*args, **kwargs):
+            start_time = time.time()
+            result = await func(*args, **kwargs)
+            end_time = time.time()
+            execution_time = (end_time - start_time) * 1000
+            print(f"\n{func_name} execution time: {execution_time:.2f} ms")
+            return result
 
-    patcher = patch.object(
-        aiofiles,
-        "open",
-        return_value=mock_aiofiles_open,
-    )
-    patcher.start()
+        @functools.wraps(func)
+        def sync_wrapper(*args, **kwargs):
+            start_time = time.time()
+            result = func(*args, **kwargs)
+            end_time = time.time()
+            execution_time = (end_time - start_time) * 1000
+            print(f"\n{func_name} execution time: {execution_time:.2f} ms")
+            return result
 
-    yield mock_file
+        if asyncio.iscoroutinefunction(func):
+            return async_wrapper
+        return sync_wrapper
 
-    patcher.stop()
+    return decorator
 
 
-def patcher_aiofiles_open_wirte(
-    return_value=None,
-    side_effect=None,
-):
-    mock_file = AsyncMock()
-    mock_file.write = AsyncMock(
-        return_value=return_value,
-        side_effect=side_effect,
-    )
-    mock_aiofiles_open_aenter = AsyncMock(
-        return_value=mock_file,
-    )
-    mock_aiofiles_open = AsyncMock(
-        __aenter__=mock_aiofiles_open_aenter,
-    )
+"""
+@measure_execution_time("동기 함수")
+def sync_function():
+    time.sleep(1)
+    return "완료"
 
-    patcher = patch.object(
-        aiofiles,
-        "open",
-        return_value=mock_aiofiles_open,
-    )
-    return patcher
+@measure_execution_time("비동기 함수")
+async def async_function():
+    await asyncio.sleep(1)
+    return "완료"
+"""

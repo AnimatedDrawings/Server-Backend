@@ -68,7 +68,7 @@ def ping():
 
 
 if __name__ == "__main__":
-    from ad_fast_api.workspace.sources import work_dir
+    from ad_fast_api.workspace.sources import conf_workspace
 
-    work_dir.FILES_PATH.mkdir(exist_ok=True)
+    conf_workspace.FILES_PATH.mkdir(exist_ok=True)
     uvicorn.run("main:app", host="0.0.0.0", port=8000, reload=True)

@@ -6,7 +6,7 @@ from ad_fast_api.domain.upload_drawing.sources.helpers import (
 from ad_fast_api.domain.upload_drawing.sources.helpers import (
     upload_drawing_http_exception as ude,
 )
-from ad_fast_api.workspace.sources.work_dir import get_base_path
+from ad_fast_api.workspace.sources.conf_workspace import get_base_path
 from typing import Optional
 from logging import Logger
 from ad_fast_api.snippets.sources.ad_logger import setup_logger
@@ -14,10 +14,12 @@ import numpy as np
 import httpx
 from numpy.typing import NDArray
 import json
-import yaml
-import aiofiles
 from fastapi import HTTPException
 from ad_fast_api.domain.schema.sources.schemas import BoundingBox
+from ad_fast_api.workspace.sources import conf_workspace as cw
+from ad_fast_api.domain.ad_features.sources.bounding_box_feature import (
+    save_bounding_box,
+)
 
 
 def check_image_is_rgb(
@@ -25,7 +27,7 @@ def check_image_is_rgb(
     logger: Logger,
     origin_image_name: Optional[str] = None,
 ) -> NDArray:
-    origin_image_path = base_path.joinpath(origin_image_name or uds.ORIGIN_IMAGE_NAME)
+    origin_image_path = base_path.joinpath(origin_image_name or cw.ORIGIN_IMAGE_NAME)
 
     img = cv2.imread(origin_image_path.as_posix())
 
@@ -53,7 +55,7 @@ def resize_image(img: NDArray) -> NDArray:
     return img
 
 
-async def send_to_torchserve(
+async def send_to_torchserve_async(
     img: NDArray,
     logger: Logger,
     url: Optional[str] = None,
@@ -138,18 +140,6 @@ def calculate_bounding_box(
     return bounding_box
 
 
-async def save_bounding_box(
-    bounding_box: BoundingBox,
-    base_path: Path,
-):
-    # dump the bounding box results to file asynchronously
-    bounding_box_path = base_path.joinpath(uds.BOUNDING_BOX_FILE_NAME)
-    bounding_box_dict = bounding_box.model_dump(mode="json")
-    content = yaml.dump(bounding_box_dict)
-    async with aiofiles.open(bounding_box_path.as_posix(), "w") as f:
-        await f.write(content)
-
-
 async def detect_character(ad_id: str) -> BoundingBox:
     base_path = get_base_path(ad_id=ad_id)
 
@@ -170,7 +160,7 @@ async def detect_character(ad_id: str) -> BoundingBox:
 
     img = resize_image(img=img)
 
-    resp = await send_to_torchserve(
+    resp = await send_to_torchserve_async(
         img=img,
         logger=logger,
     )
@@ -188,7 +178,7 @@ async def detect_character(ad_id: str) -> BoundingBox:
         detection_results=detection_results,
         logger=logger,
     )
-    await save_bounding_box(
+    save_bounding_box(
         bounding_box=bounding_box,
         base_path=base_path,
     )

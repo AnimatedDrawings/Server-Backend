@@ -1,7 +1,5 @@
 import io
 from pathlib import Path
-from fastapi import UploadFile
-from ad_fast_api.domain.schema.sources.bounding_box import BoundingBox
 
 fake_workspace_files_path = Path(__file__).parent
 fake_log_file_name = "test.log"

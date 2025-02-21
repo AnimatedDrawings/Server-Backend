@@ -1,8 +1,4 @@
-ORIGIN_IMAGE_NAME = "image.png"
-
-
 TORCHSERVE_URL = "http://torchserve:8080/predictions/drawn_humanoid_detector"
-BOUNDING_BOX_FILE_NAME = "bounding_box.yaml"
 
 
 IMAGE_SHAPE_ERROR = "image must have 3 channels (rgb). Found {len_shape}"

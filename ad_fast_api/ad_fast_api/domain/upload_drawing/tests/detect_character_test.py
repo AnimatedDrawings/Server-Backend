@@ -91,14 +91,14 @@ def test_resize_image_when_smaller_than_1000():
 
 @pytest.mark.asyncio
 @respx.mock
-async def test_send_to_torchserve_success(mock_logger):
+async def test_send_to_torchserve_async_success(mock_logger):
     # given
     mock_response = httpx.Response(200, content=b'{"result": "success"}')
     route = respx.post(uds.TORCHSERVE_URL).mock(return_value=mock_response)
 
     # when
     test_img = np.zeros((224, 224, 3), dtype=np.uint8)
-    response = await dc.send_to_torchserve(test_img, mock_logger)
+    response = await dc.send_to_torchserve_async(test_img, mock_logger)
 
     # then
     assert response.status_code == mock_response.status_code
@@ -109,7 +109,7 @@ async def test_send_to_torchserve_success(mock_logger):
 
 @pytest.mark.asyncio
 @respx.mock
-async def test_send_to_torchserve_fail_status_code_300(mock_logger):
+async def test_send_to_torchserve_async_fail_status_code_300(mock_logger):
     # given
     mock_response = httpx.Response(300, content=b"Bad Request")
     respx.post(uds.TORCHSERVE_URL).mock(return_value=mock_response)
@@ -117,7 +117,7 @@ async def test_send_to_torchserve_fail_status_code_300(mock_logger):
 
     # when
     with pytest.raises(Exception) as exc_info:
-        await dc.send_to_torchserve(test_img, mock_logger)
+        await dc.send_to_torchserve_async(test_img, mock_logger)
 
     # then
     expected_msg = uds.SEND_TO_TORCHSERVE_ERROR.format(resp=mock_response)
@@ -127,7 +127,7 @@ async def test_send_to_torchserve_fail_status_code_300(mock_logger):
 
 @pytest.mark.asyncio
 @respx.mock
-async def test_send_to_torchserve_fail_connection_error(mock_logger):
+async def test_send_to_torchserve_async_fail_connection_error(mock_logger):
     # given
     test_exception = httpx.ConnectError("Connection failed")
     respx.post(uds.TORCHSERVE_URL).mock(side_effect=test_exception)
@@ -135,7 +135,7 @@ async def test_send_to_torchserve_fail_connection_error(mock_logger):
 
     # when
     with pytest.raises(Exception) as exc_info:
-        await dc.send_to_torchserve(test_img, mock_logger)
+        await dc.send_to_torchserve_async(test_img, mock_logger)
 
     # then
     expected_msg = uds.SEND_TO_TORCHSERVE_ERROR.format(resp=str(test_exception))
@@ -302,35 +302,6 @@ def test_calculate_bounding_box_failed(mock_logger):
 
 
 @pytest.mark.asyncio
-async def test_save_bounding_box_success():
-    # given
-    bounding_box = BoundingBox.mock()
-    base_path = fud.fake_workspace_files_path
-    expected_path = base_path.joinpath(uds.BOUNDING_BOX_FILE_NAME)
-    mock_file = AsyncMock()
-    mock_file.__aenter__.return_value = mock_file
-    dumped_yaml = "mocked_yaml_data"
-
-    # when
-    with patch(
-        "aiofiles.open",
-        return_value=mock_file,
-    ) as mock_open, patch(
-        "yaml.dump",
-        return_value=dumped_yaml,
-    ) as mock_dump:
-        await dc.save_bounding_box(bounding_box, base_path)
-
-        # then
-        # 올바른 경로에 파일 생성 시도
-        # YAML 직렬화가 올바른 데이터로 수행
-        # 비동기 쓰기 작업이 정상적으로 호출
-        mock_open.assert_called_once_with(expected_path.as_posix(), "w")
-        mock_dump.assert_called_once_with(bounding_box.model_dump(mode="json"))
-        mock_file.write.assert_awaited_once_with(dumped_yaml)
-
-
-@pytest.mark.asyncio
 async def test_detect_character_success():
     # given
     ad_id = "test_ad_id"
@@ -360,7 +331,7 @@ async def test_detect_character_success():
     ) as mock_check_image, patch.object(
         dc, "resize_image", return_value=fake_img_after_resize
     ) as mock_resize, patch.object(
-        dc, "send_to_torchserve", new=AsyncMock(return_value=fake_response)
+        dc, "send_to_torchserve_async", new=AsyncMock(return_value=fake_response)
     ) as mock_send, patch.object(
         dc, "check_detection_results", return_value=fake_detection_results
     ) as mock_check_detections, patch.object(
@@ -368,7 +339,7 @@ async def test_detect_character_success():
     ) as mock_sort, patch.object(
         dc, "calculate_bounding_box", return_value=fake_bounding_box
     ) as mock_calc, patch.object(
-        dc, "save_bounding_box", new=AsyncMock()
+        dc, "save_bounding_box", new=Mock()
     ) as mock_save:
 
         # when
@@ -391,7 +362,7 @@ async def test_detect_character_success():
     mock_calc.assert_called_once_with(
         detection_results=fake_detection_results, logger=fake_logger
     )
-    mock_save.assert_awaited_once_with(
+    mock_save.assert_called_once_with(
         bounding_box=fake_bounding_box, base_path=fake_base_path
     )
 
@@ -425,7 +396,7 @@ async def test_detect_character_fail_image_is_not_rgb():
     ) as mock_check_image, patch.object(
         dc, "resize_image", return_value=fake_img_after_resize
     ) as mock_resize, patch.object(
-        dc, "send_to_torchserve", new=AsyncMock(return_value=fake_response)
+        dc, "send_to_torchserve_async", new=AsyncMock(return_value=fake_response)
     ) as mock_send, patch.object(
         dc, "check_detection_results", return_value=fake_detection_results
     ) as mock_check_detections, patch.object(
@@ -433,7 +404,7 @@ async def test_detect_character_fail_image_is_not_rgb():
     ) as mock_sort, patch.object(
         dc, "calculate_bounding_box", return_value=fake_bounding_box
     ) as mock_calc, patch.object(
-        dc, "save_bounding_box", new=AsyncMock()
+        dc, "save_bounding_box", new=Mock()
     ) as mock_save:
 
         # when

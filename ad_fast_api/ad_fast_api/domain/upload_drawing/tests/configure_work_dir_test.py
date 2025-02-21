@@ -1,7 +1,7 @@
 import pytest
-from unittest.mock import patch, AsyncMock
 from fastapi import UploadFile, HTTPException
 from io import BytesIO
+from pathlib import Path
 from ad_fast_api.domain.upload_drawing.sources.features import configure_work_dir as cwd
 from ad_fast_api.snippets.testings import mock_ad_time
 from ad_fast_api.domain.upload_drawing.testings import (
@@ -9,11 +9,11 @@ from ad_fast_api.domain.upload_drawing.testings import (
     fake_upload_drawing as fud,
 )
 from ad_fast_api.domain.upload_drawing.sources.helpers import (
-    upload_drawing_strings as uds,
-)
-from ad_fast_api.domain.upload_drawing.sources.helpers import (
     upload_drawing_http_exception as ude,
 )
+from ad_fast_api.workspace.sources import conf_workspace as cw
+from ad_fast_api.snippets.sources.ad_test import measure_execution_time
+from faker import Faker
 
 
 def test_make_ad_id():
@@ -65,27 +65,22 @@ def test_get_file_bytes():
 
 
 @pytest.mark.asyncio
-async def test_save_origin_image():
+async def test_save_origin_image_async(tmp_path: Path):
     # given
     base_path = fud.fake_workspace_files_path
-    origin_image_path = base_path.joinpath(uds.ORIGIN_IMAGE_NAME)
-    file_bytes = b"Hello, Async World!"
-    mock_file = AsyncMock()
-    mock_file.__aenter__.return_value = mock_file
+    origin_image_path = base_path.joinpath(cw.ORIGIN_IMAGE_NAME)
+    fake = Faker()
+    file_bytes = fake.binary(length=10 * 1024 * 1024)
 
     # when
-    with patch(
-        "aiofiles.open",
-        return_value=mock_file,
-    ) as mock_open:
-        await cwd.save_origin_image(
-            base_path=base_path,
-            file_bytes=file_bytes,
-        )
+    await measure_execution_time("save_origin_image")(cwd.save_origin_image_async)(
+        base_path=base_path,
+        file_bytes=file_bytes,
+    )
 
-        # then
-        mock_open.assert_called_once_with(origin_image_path.as_posix(), "wb")
-        mock_file.write.assert_awaited_once_with(file_bytes)
+    # then
+    assert origin_image_path.exists()
+    assert origin_image_path.read_bytes() == file_bytes
 
 
 @pytest.mark.asyncio
@@ -98,7 +93,7 @@ async def test_save_image_success():
             return_value=fud.fake_workspace_files_path.joinpath(ad_id)
         ),
         mudf.patcher_get_file_bytes(return_value=b"Hello, Async World!"),
-        mudf.patcher_save_origin_image(return_value=None),
+        mudf.patcher_save_origin_image_async(return_value=None),
     ):
         # when
         expect_ad_id = await cwd.save_image(
@@ -121,7 +116,7 @@ async def test_save_image_fail_file_bytes_is_empty():
             return_value=fud.fake_workspace_files_path.joinpath(ad_id)
         ),
         mudf.patcher_get_file_bytes(return_value=None),
-        mudf.patcher_save_origin_image(return_value=None),
+        mudf.patcher_save_origin_image_async(return_value=None),
     ):
         # when/then
         with pytest.raises(HTTPException) as exc_info:

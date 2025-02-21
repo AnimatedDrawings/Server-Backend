@@ -41,13 +41,13 @@ def patcher_get_file_bytes(
     return patcher
 
 
-def patcher_save_origin_image(
+def patcher_save_origin_image_async(
     return_value=None,
     side_effect=None,
 ):
     patcher = patch.object(
         cwd,
-        "save_origin_image",
+        "save_origin_image_async",
         return_value=return_value,
         side_effect=side_effect,
     )
