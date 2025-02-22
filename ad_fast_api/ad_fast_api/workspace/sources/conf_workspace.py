@@ -3,9 +3,11 @@ from typing import Optional
 
 
 FILES_PATH = Path(__file__).parent.parent.joinpath("files")
-ORIGIN_IMAGE_NAME = "image.png"
+ORIGIN_IMAGE_NAME = "origin_image.png"
 BOUNDING_BOX_FILE_NAME = "bounding_box.yaml"
-CROPPED_IMAGE_NAME = "texture.png"
+CROPPED_IMAGE_NAME = "cropped_image.png"
+MASK_IMAGE_NAME = "mask_image.png"
+REMOVED_BG_IMAGE_NAME = "removed_bg_image.png"
 
 
 def get_base_path(

@@ -6,19 +6,6 @@ from ad_fast_api.domain.upload_drawing.testings import fake_upload_drawing as fu
 
 
 @pytest.fixture(scope="session")
-def mock_logger():
-    logger = setup_logger(
-        base_path=fud.fake_workspace_files_path,
-        log_file_name=fud.fake_log_file_name,
-    )
-
-    yield logger
-
-    fud.fake_workspace_files_path.joinpath(fud.fake_log_file_name).unlink()
-    del logger
-
-
-@pytest.fixture(scope="session")
 def mock_client():
     client = TestClient(app)
     yield client
