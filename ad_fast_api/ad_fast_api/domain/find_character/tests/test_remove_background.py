@@ -50,7 +50,7 @@ def remove_background_garlic():
 
     fcf.cv2_save_image(
         image=removed_bg_image,
-        image_name="test_" + cw.REMOVED_BG_IMAGE_NAME,
+        image_name="test_" + cw.CUTOUT_CHARACTER_IMAGE_NAME,
         base_path=mcw.GARLIC_TEST_PATH,
     )
 

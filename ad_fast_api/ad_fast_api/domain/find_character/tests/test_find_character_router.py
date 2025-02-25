@@ -61,5 +61,5 @@ def test_find_character_success(mock_logger):
         logger=mock_logger,
     )
     mock_file_response.assert_called_once_with(
-        base_path.joinpath(cw.REMOVED_BG_IMAGE_NAME).as_posix(),
+        base_path.joinpath(cw.CUTOUT_CHARACTER_IMAGE_NAME).as_posix(),
     )

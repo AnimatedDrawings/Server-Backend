@@ -12,8 +12,8 @@ from ad_fast_api.workspace.testings import mock_conf_workspace as mcw
 from ad_fast_api.snippets.sources.ad_logger import setup_logger
 from ad_fast_api.workspace.sources import conf_workspace as cw
 from ad_fast_api.domain.find_character.sources.features import segment_character as sc
-from ad_fast_api.domain.find_character.sources.helpers import (
-    find_character_string as fcs,
+from ad_fast_api.domain.find_character.sources.errors import (
+    find_character_500_status as fcs,
 )
 
 

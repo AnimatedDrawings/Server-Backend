@@ -1,11 +1,9 @@
 from fastapi import APIRouter
 from fastapi.responses import FileResponse
 from ad_fast_api.domain.schema.sources.schemas import BoundingBox
-from ad_fast_api.domain.ad_features.sources.bounding_box_feature import (
-    save_bounding_box,
-)
 from ad_fast_api.domain.find_character.sources.features.find_character_feature import (
     crop_and_segment_character,
+    save_bounding_box,
 )
 from ad_fast_api.workspace.sources import conf_workspace as cw
 from ad_fast_api.snippets.sources.ad_logger import setup_logger
@@ -16,7 +14,7 @@ router = APIRouter()
 
 
 @router.post("/find_character")
-async def find_character(
+def find_character(
     ad_id: str,
     bounding_box: BoundingBox,
 ) -> FileResponse:
@@ -38,5 +36,5 @@ async def find_character(
         status_code=501,
     )
 
-    mask_image_path = base_path.joinpath(cw.REMOVED_BG_IMAGE_NAME)
+    mask_image_path = base_path.joinpath(cw.CUTOUT_CHARACTER_IMAGE_NAME)
     return FileResponse(mask_image_path.as_posix())

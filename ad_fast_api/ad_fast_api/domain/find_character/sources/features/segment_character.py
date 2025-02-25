@@ -3,8 +3,8 @@ import numpy as np
 from skimage import measure
 from logging import Logger
 from scipy import ndimage
-from ad_fast_api.domain.find_character.sources.helpers import (
-    find_character_string as fcs,
+from ad_fast_api.domain.find_character.sources.errors import (
+    find_character_500_status as fcs,
 )
 
 
@@ -151,7 +151,7 @@ def extract_largest_contour(im_floodfill: np.ndarray, logger: Logger) -> np.ndar
     filled_mask = ndimage.binary_fill_holes(largest_mask)
 
     # 최종 마스크를 0~255 범위의 uint8 이미지로 변환 후, transpose하여 반환함
-    final_mask = 255 * filled_mask.astype(np.uint8) # type: ignore
+    final_mask = 255 * filled_mask.astype(np.uint8)  # type: ignore
 
     return final_mask.T
 

@@ -1,4 +1,3 @@
-from abc import ABC, abstractmethod
 from typing import Any, Callable
 from fastapi import HTTPException
 
@@ -65,17 +64,3 @@ async def handle_operation_async(
             status_code=status_code,
             detail=str(e),
         )
-
-
-class HTTPExceptionABC(ABC):
-    @classmethod
-    @abstractmethod
-    def status_code(cls) -> int:
-        """반환할 HTTP status code를 정의합니다."""
-        pass
-
-    @classmethod
-    @abstractmethod
-    def detail(cls) -> str:
-        """반환할 상세 메시지를 정의합니다."""
-        pass

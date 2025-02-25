@@ -1,0 +1,204 @@
+import cv2
+import numpy as np
+from cv2.typing import MatLike
+import httpx
+from typing import Optional
+from ad_fast_api.domain.cutout_character.sources.errors import (
+    cutout_character_500_status as cc5s,
+)
+from logging import Logger
+import json
+from pathlib import Path
+import yaml
+
+
+GET_SKELETON_TORCHSERVE_URL = (
+    "http://torchserve:8080/predictions/drawn_humanoid_pose_estimator"
+)
+
+
+async def get_skeleton_async(
+    cropped_image: MatLike,
+    logger: Logger,
+    url: Optional[str] = None,
+) -> dict:
+    data_file = {"data": cv2.imencode(".png", cropped_image)[1].tobytes()}
+    async with httpx.AsyncClient(verify=False) as client:
+        try:
+            resp = await client.post(
+                url or GET_SKELETON_TORCHSERVE_URL,
+                files=data_file,
+            )
+        except Exception as e:
+            msg = cc5s.GET_SKELETON_TORCHSERVE_ERROR.format(resp=str(e))
+            logger.critical(msg)
+            raise Exception(msg)
+
+        if resp is None or resp.status_code >= 300:
+            msg = cc5s.GET_SKELETON_TORCHSERVE_ERROR.format(resp=resp)
+            logger.critical(msg)
+            raise Exception(msg)
+
+        pose_results = json.loads(resp.content)
+        return pose_results
+
+
+def check_pose_results(
+    pose_results: dict,
+    logger: Logger,
+) -> np.ndarray:
+    if (
+        type(pose_results) == dict
+        and "code" in pose_results.keys()
+        and pose_results["code"] == 404
+    ):
+        msg = cc5s.POSE_ESTIMATION_ERROR.format(pose_results=pose_results)
+        logger.critical(msg)
+        raise Exception(msg)
+
+    # if cannot detect any skeleton, abort
+    if len(pose_results) == 0:
+        msg = cc5s.NO_SKELETON_DETECTED
+        logger.critical(msg)
+        raise Exception(msg)
+
+    # if more than one skeleton detected, abort
+    if 1 < len(pose_results):
+        msg = cc5s.MORE_THAN_ONE_SKELETON_DETECTED.format(
+            len_pose_results=len(pose_results)
+        )
+        logger.critical(msg)
+        raise Exception(msg)
+
+    # get x y coordinates of detection joint keypoints
+    kpts = np.array(pose_results[0]["keypoints"])[:, :2]
+    return kpts
+
+
+def test(
+    kpts: np.ndarray,
+    cropped_image: MatLike,
+    base_path: Path,
+):
+    # use them to build character skeleton rig
+    skeleton = []
+    skeleton.append(
+        {
+            "loc": [round(x) for x in (kpts[11] + kpts[12]) / 2],
+            "name": "root",
+            "parent": None,
+        }
+    )
+    skeleton.append(
+        {
+            "loc": [round(x) for x in (kpts[11] + kpts[12]) / 2],
+            "name": "hip",
+            "parent": "root",
+        }
+    )
+    skeleton.append(
+        {
+            "loc": [round(x) for x in (kpts[5] + kpts[6]) / 2],
+            "name": "torso",
+            "parent": "hip",
+        }
+    )
+    skeleton.append(
+        {"loc": [round(x) for x in kpts[0]], "name": "neck", "parent": "torso"}
+    )
+    skeleton.append(
+        {
+            "loc": [round(x) for x in kpts[6]],
+            "name": "right_shoulder",
+            "parent": "torso",
+        }
+    )
+    skeleton.append(
+        {
+            "loc": [round(x) for x in kpts[8]],
+            "name": "right_elbow",
+            "parent": "right_shoulder",
+        }
+    )
+    skeleton.append(
+        {
+            "loc": [round(x) for x in kpts[10]],
+            "name": "right_hand",
+            "parent": "right_elbow",
+        }
+    )
+    skeleton.append(
+        {"loc": [round(x) for x in kpts[5]], "name": "left_shoulder", "parent": "torso"}
+    )
+    skeleton.append(
+        {
+            "loc": [round(x) for x in kpts[7]],
+            "name": "left_elbow",
+            "parent": "left_shoulder",
+        }
+    )
+    skeleton.append(
+        {
+            "loc": [round(x) for x in kpts[9]],
+            "name": "left_hand",
+            "parent": "left_elbow",
+        }
+    )
+    skeleton.append(
+        {"loc": [round(x) for x in kpts[12]], "name": "right_hip", "parent": "root"}
+    )
+    skeleton.append(
+        {
+            "loc": [round(x) for x in kpts[14]],
+            "name": "right_knee",
+            "parent": "right_hip",
+        }
+    )
+    skeleton.append(
+        {
+            "loc": [round(x) for x in kpts[16]],
+            "name": "right_foot",
+            "parent": "right_knee",
+        }
+    )
+    skeleton.append(
+        {"loc": [round(x) for x in kpts[11]], "name": "left_hip", "parent": "root"}
+    )
+    skeleton.append(
+        {"loc": [round(x) for x in kpts[13]], "name": "left_knee", "parent": "left_hip"}
+    )
+    skeleton.append(
+        {
+            "loc": [round(x) for x in kpts[15]],
+            "name": "left_foot",
+            "parent": "left_knee",
+        }
+    )
+
+    # create the character config dictionary
+    char_cfg = {
+        "skeleton": skeleton,
+        "height": cropped_image.shape[0],
+        "width": cropped_image.shape[1],
+    }
+    char_cfg_path = base_path.joinpath("char_cfg.yaml")
+    with open(char_cfg_path.as_posix(), "w") as f:
+        yaml.dump(char_cfg, f)
+
+    # # create joint viz overlay for inspection purposes
+    # joint_overlay = cropped.copy()
+    # for joint in skeleton:
+    #     x, y = joint["loc"]
+    #     name = joint["name"]
+    #     cv2.circle(joint_overlay, (int(x), int(y)), 5, (0, 0, 0), 5)
+    #     cv2.putText(
+    #         joint_overlay,
+    #         name,
+    #         (int(x), int(y + 15)),
+    #         cv2.FONT_HERSHEY_SIMPLEX,
+    #         0.5,
+    #         (0, 0, 0),
+    #         1,
+    #         2,
+    #     )
+    # cv2.imwrite(str(outdir / "joint_overlay.png"), joint_overlay)

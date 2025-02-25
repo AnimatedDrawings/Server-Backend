@@ -7,7 +7,7 @@ ORIGIN_IMAGE_NAME = "origin_image.png"
 BOUNDING_BOX_FILE_NAME = "bounding_box.yaml"
 CROPPED_IMAGE_NAME = "cropped_image.png"
 MASK_IMAGE_NAME = "mask_image.png"
-REMOVED_BG_IMAGE_NAME = "removed_bg_image.png"
+CUTOUT_CHARACTER_IMAGE_NAME = "cutout_character_image.png"
 
 
 def get_base_path(

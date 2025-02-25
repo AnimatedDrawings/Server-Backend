@@ -11,7 +11,7 @@ def test_upload_drawing_success(mock_client):
 
     with patch.object(
         udr,
-        "save_image",
+        "save_origin_image_async",
         new=AsyncMock(return_value=fud.fake_ad_id),
     ) as mock_save_image, patch.object(
         udr,
@@ -42,7 +42,7 @@ def test_upload_drawing_save_image_http_exception(mock_client):
 
     with patch.object(
         udr,
-        "save_image",
+        "save_origin_image_async",
         new=AsyncMock(
             side_effect=HTTPException(
                 status_code=400,
@@ -67,7 +67,7 @@ def test_upload_drawing_detect_character_http_exception(mock_client):
 
     with patch.object(
         udr,
-        "save_image",
+        "save_origin_image_async",
         new=AsyncMock(return_value=fud.fake_ad_id),
     ) as mock_save_image, patch.object(
         udr,
@@ -93,7 +93,7 @@ def test_upload_drawing_server_error(mock_client):
     detail = "Unexpected server error"
     with patch.object(
         udr,
-        "save_image",
+        "save_origin_image_async",
         new=AsyncMock(
             side_effect=HTTPException(
                 status_code=500,

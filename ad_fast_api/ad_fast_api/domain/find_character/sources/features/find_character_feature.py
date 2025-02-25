@@ -14,6 +14,20 @@ from ad_fast_api.domain.find_character.sources.features.remove_background import
     remove_background,
 )
 from typing import Optional
+from ad_fast_api.snippets.sources.save_dict import dict_to_file
+
+
+def save_bounding_box(
+    bounding_box: BoundingBox,
+    base_path: Path,
+):
+    to_save_dict = bounding_box.model_dump(mode="json")
+    bounding_box_file_name = cw.BOUNDING_BOX_FILE_NAME
+    bounding_box_file_path = base_path.joinpath(bounding_box_file_name)
+    dict_to_file(
+        to_save_dict=to_save_dict,
+        file_path=bounding_box_file_path,
+    )
 
 
 # cv2는 cpu bound 작업이므로 asyncio를 사용하지 않음
@@ -63,6 +77,6 @@ def crop_and_segment_character(
 
     cv2_save_image(
         image=removed_bg_image,
-        image_name=cw.REMOVED_BG_IMAGE_NAME,
+        image_name=cw.CUTOUT_CHARACTER_IMAGE_NAME,
         base_path=base_path,
     )
