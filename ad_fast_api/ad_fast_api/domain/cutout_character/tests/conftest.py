@@ -1,5 +1,12 @@
 import numpy as np
 import pytest
+from fastapi.testclient import TestClient
+from ad_fast_api.main import app
+
+
+@pytest.fixture(scope="session")
+def mock_client():
+    return TestClient(app)
 
 
 @pytest.fixture

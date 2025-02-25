@@ -22,7 +22,7 @@ async def get_pose_result_async(
     cropped_image: MatLike,
     logger: Logger,
     url: Optional[str] = None,
-) -> dict:
+) -> list[dict] | dict:
     data_file = {"data": cv2.imencode(".png", cropped_image)[1].tobytes()}
     async with httpx.AsyncClient(verify=False) as client:
         try:
@@ -45,7 +45,7 @@ async def get_pose_result_async(
 
 
 def check_pose_results(
-    pose_results: list[dict],
+    pose_results: list[dict] | dict,
     logger: Logger,
 ) -> np.ndarray:
     if (

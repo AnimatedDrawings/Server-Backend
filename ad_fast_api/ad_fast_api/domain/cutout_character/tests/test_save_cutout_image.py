@@ -101,7 +101,7 @@ def test_same_size_no_resize(tmp_path, mock_logger):
     cv2.imwrite(str(cutout_path), cutout_image)
 
     mod_time_before = os.path.getmtime(cutout_path)
-    resized_image = sci.resize_cutout_image(
+    _ = sci.resize_cutout_image(
         base_path=tmp_path,
         logger=mock_logger,
     )
@@ -109,8 +109,6 @@ def test_same_size_no_resize(tmp_path, mock_logger):
 
     # 파일이 변경되지 않았음을 확인 (리사이즈가 수행되지 않음)
     assert mod_time_before == mod_time_after
-
-    assert resized_image is None
     result_image = cv2.imread(str(cutout_path), cv2.IMREAD_UNCHANGED)
     assert result_image.shape == (100, 100, 3)
 

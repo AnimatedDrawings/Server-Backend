@@ -1,5 +1,5 @@
 import cv2
-from typing import Optional, Tuple
+from typing import Tuple
 from cv2.typing import MatLike
 from pathlib import Path
 from fastapi import UploadFile
@@ -30,7 +30,7 @@ async def save_cutout_character_image_async(
 def resize_cutout_image(
     base_path: Path,
     logger: Logger,
-) -> Optional[Tuple[MatLike, MatLike]]:
+) -> Tuple[MatLike, MatLike]:
     # 경로 처리
     cropped_image_path = base_path / cw.CROPPED_IMAGE_NAME
     cutout_image_path = base_path / cw.CUTOUT_CHARACTER_IMAGE_NAME
@@ -54,7 +54,7 @@ def resize_cutout_image(
 
     # 이미 크기가 동일하면 resize 생략
     if cutout_image.shape[0] == height and cutout_image.shape[1] == width:
-        return None
+        return (cropped_image, cutout_image)
 
     # 축소할 경우 INTER_AREA, 확대할 경우 INTER_LINEAR 사용
     if cutout_image.shape[0] > height or cutout_image.shape[1] > width:

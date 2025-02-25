@@ -57,11 +57,13 @@ from fastapi import FastAPI
 
 from ad_fast_api.domain.upload_drawing.sources import upload_drawing_router
 from ad_fast_api.domain.find_character.sources import find_character_router
+from ad_fast_api.domain.cutout_character.sources import cutout_character_router
 
 
 app = FastAPI()
 app.include_router(upload_drawing_router.router)
 app.include_router(find_character_router.router)
+app.include_router(cutout_character_router.router)
 
 
 @app.get("/ping")
