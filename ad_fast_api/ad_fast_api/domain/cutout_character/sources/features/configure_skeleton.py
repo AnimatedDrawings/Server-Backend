@@ -9,7 +9,8 @@ from ad_fast_api.domain.cutout_character.sources.errors import (
 from logging import Logger
 import json
 from pathlib import Path
-import yaml
+from ad_fast_api.workspace.sources.conf_workspace import CHAR_CFG_FILE_NAME
+from ad_fast_api.snippets.sources.save_dict import dict_to_file
 
 
 GET_SKELETON_TORCHSERVE_URL = (
@@ -17,7 +18,7 @@ GET_SKELETON_TORCHSERVE_URL = (
 )
 
 
-async def get_skeleton_async(
+async def get_pose_result_async(
     cropped_image: MatLike,
     logger: Logger,
     url: Optional[str] = None,
@@ -44,7 +45,7 @@ async def get_skeleton_async(
 
 
 def check_pose_results(
-    pose_results: dict,
+    pose_results: list[dict],
     logger: Logger,
 ) -> np.ndarray:
     if (
@@ -75,11 +76,9 @@ def check_pose_results(
     return kpts
 
 
-def test(
+def make_skeleton(
     kpts: np.ndarray,
-    cropped_image: MatLike,
-    base_path: Path,
-):
+) -> list:
     # use them to build character skeleton rig
     skeleton = []
     skeleton.append(
@@ -175,30 +174,22 @@ def test(
         }
     )
 
+    return skeleton
+
+
+def save_char_cfg(
+    skeleton: list,
+    cropped_image: MatLike,
+    base_path: Path,
+):
     # create the character config dictionary
     char_cfg = {
         "skeleton": skeleton,
         "height": cropped_image.shape[0],
         "width": cropped_image.shape[1],
     }
-    char_cfg_path = base_path.joinpath("char_cfg.yaml")
-    with open(char_cfg_path.as_posix(), "w") as f:
-        yaml.dump(char_cfg, f)
-
-    # # create joint viz overlay for inspection purposes
-    # joint_overlay = cropped.copy()
-    # for joint in skeleton:
-    #     x, y = joint["loc"]
-    #     name = joint["name"]
-    #     cv2.circle(joint_overlay, (int(x), int(y)), 5, (0, 0, 0), 5)
-    #     cv2.putText(
-    #         joint_overlay,
-    #         name,
-    #         (int(x), int(y + 15)),
-    #         cv2.FONT_HERSHEY_SIMPLEX,
-    #         0.5,
-    #         (0, 0, 0),
-    #         1,
-    #         2,
-    #     )
-    # cv2.imwrite(str(outdir / "joint_overlay.png"), joint_overlay)
+    char_cfg_path = base_path.joinpath(CHAR_CFG_FILE_NAME)
+    dict_to_file(
+        to_save_dict=char_cfg,
+        file_path=char_cfg_path,
+    )

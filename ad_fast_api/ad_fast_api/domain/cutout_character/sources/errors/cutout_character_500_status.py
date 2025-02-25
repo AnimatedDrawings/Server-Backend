@@ -10,4 +10,4 @@ CUTOUT_CHARACTER_IMAGE_DOES_NOT_HAVE_ALPHA_CHANNEL = (
 GET_SKELETON_TORCHSERVE_ERROR = "Failed to get skeletons, please check if the 'docker_torchserve' is running and healthy, resp: {resp}"
 POSE_ESTIMATION_ERROR = "Error performing pose estimation. Check that drawn_humanoid_pose_estimator.mar was properly downloaded. Response: {pose_results}"
 NO_SKELETON_DETECTED = "Could not detect any skeletons within the character bounding box. Expected exactly 1. Aborting."
-MORE_THAN_ONE_SKELETON_DETECTED = "Detected {len(pose_results)} skeletons with the character bounding box. Expected exactly 1. Aborting."
+MORE_THAN_ONE_SKELETON_DETECTED = "Detected {len_pose_results} skeletons with the character bounding box. Expected exactly 1. Aborting."
