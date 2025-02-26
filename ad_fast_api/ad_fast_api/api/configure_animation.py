@@ -17,8 +17,8 @@ AD_BASEURL = "http://animated_drawings:8001/"
 ad_animation_set = ["dab", "zombie"]
 
 
-class ADAnimation(BaseModel):
-    name: str
+# class ADAnimation(BaseModel):
+#     name: str
 
 
 @router.post("/add/{ad_id}")

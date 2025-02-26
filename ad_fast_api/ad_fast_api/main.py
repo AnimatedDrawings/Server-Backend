@@ -62,6 +62,7 @@ from ad_fast_api.domain.cutout_character.sources import cutout_character_router
 from ad_fast_api.domain.configure_character_joints.sources import (
     configure_character_joints_router,
 )
+from ad_fast_api.domain.make_animation.sources import make_animation_router
 
 
 app = FastAPI()
@@ -69,6 +70,7 @@ app.include_router(upload_drawing_router.router)
 app.include_router(find_character_router.router)
 app.include_router(cutout_character_router.router)
 app.include_router(configure_character_joints_router.router)
+app.include_router(make_animation_router.router)
 
 
 @app.get("/ping")

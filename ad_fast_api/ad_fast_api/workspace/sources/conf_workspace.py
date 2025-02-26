@@ -9,6 +9,19 @@ CROPPED_IMAGE_NAME = "cropped_image.png"
 MASK_IMAGE_NAME = "mask_image.png"
 CUTOUT_CHARACTER_IMAGE_NAME = "cutout_character_image.png"
 CHAR_CFG_FILE_NAME = "char_cfg.yaml"
+VIDEO_DIR_NAME = "video"
+MVC_CFG_FILE_NAME = "mvc_cfg.yaml"
+
+
+def get_video_dir_path(
+    ad_id: str,
+) -> Path:
+    base_path = get_base_path(ad_id)
+    return base_path.joinpath(VIDEO_DIR_NAME)
+
+
+def get_video_file_name(ad_animation: str) -> str:
+    return f"{ad_animation}.gif"
 
 
 def get_base_path(
