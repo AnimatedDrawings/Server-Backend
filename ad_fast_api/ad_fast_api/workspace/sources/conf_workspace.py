@@ -14,9 +14,8 @@ MVC_CFG_FILE_NAME = "mvc_cfg.yaml"
 
 
 def get_video_dir_path(
-    ad_id: str,
+    base_path: Path,
 ) -> Path:
-    base_path = get_base_path(ad_id)
     return base_path.joinpath(VIDEO_DIR_NAME)
 
 

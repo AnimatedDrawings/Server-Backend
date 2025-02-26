@@ -20,15 +20,12 @@ def test_get_video_file_name():
     assert result == expected, f"Expected {expected}, got {result}"
 
 
-def test_get_video_dir_path():
+def test_get_video_dir_path(tmp_path):
     # given
-    ad_id = "test_ad"
-    expected = conf_workspace.get_base_path(ad_id).joinpath(
-        conf_workspace.VIDEO_DIR_NAME
-    )
+    expected = tmp_path.joinpath(conf_workspace.VIDEO_DIR_NAME)
 
     # when
-    result = conf_workspace.get_video_dir_path(ad_id)
+    result = conf_workspace.get_video_dir_path(base_path=tmp_path)
 
     # then
     assert result == expected, f"Expected {expected}, got {result}"

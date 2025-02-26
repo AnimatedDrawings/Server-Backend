@@ -1,81 +1,93 @@
-import pytest
-from fastapi import HTTPException
-from ad_fast_api.domain.make_animation.sources import make_animation_feature as maf
+from ad_fast_api.domain.make_animation.sources.features import (
+    prepare_make_animation as pma,
+)
 from ad_fast_api.domain.make_animation.sources.make_animation_schema import (
     ADAnimation,
 )
 from ad_fast_api.workspace.sources.conf_workspace import (
-    get_video_file_name,
-    VIDEO_DIR_NAME,
+    CHAR_CFG_FILE_NAME,
+    MVC_CFG_FILE_NAME,
 )
-from unittest.mock import patch
+from unittest.mock import patch, MagicMock
+from pathlib import Path
 
 
-def test_valid_animations():
-    """
-    올바른 애니메이션 값을 인자로 주었을 때 예외가 발생하지 않는지 확인합니다.
-    """
-    # ADAnimation의 값들을 순회하면서 테스트합니다.
-    # ADAnimation이 Enum이라면, value나 name속성을 확인할 수 있습니다.
-    # 여기서는 간단하게 Enum 멤버 자체로 체크합니다.
-    for valid_animation in ADAnimation:
-        # 예외가 발생하지 않아야 하므로 단순히 호출만 합니다.
-        maf.check_available_animation(valid_animation)
-
-
-def test_invalid_animation():
-    """
-    잘못된 애니메이션 값을 인자로 주었을 때 HTTPException(status_code=400)를 발생하는지 확인합니다.
-    """
-    invalid_value = "invalid_animation_value"
-    with pytest.raises(HTTPException) as excinfo:
-        maf.check_available_animation(invalid_value)
-    assert excinfo.value.status_code == 400
-    assert "Invalid animation" in excinfo.value.detail
-
-
-def test_is_video_file_exists_True(tmp_path):
+def test_create_animated_drawing_dict(tmp_path):
     # given
-    video_dir_path = tmp_path / VIDEO_DIR_NAME
-    video_dir_path.mkdir(exist_ok=True)
-
+    base_path = tmp_path
     ad_animation = ADAnimation.dab
-    video_file_name = get_video_file_name(ad_animation)
-    video_file_path = video_dir_path / video_file_name
-    video_file_path.touch()
+    mock_config_dir_path = Path("/mock/config/dir")
 
     # when
     with patch.object(
-        maf,
-        "get_video_dir_path",
-        return_value=video_dir_path,
+        pma,
+        "CONFIG_DIR_PATH",
+        mock_config_dir_path,
     ):
-        result = maf.is_video_file_exists(
-            ad_id="",
+        result = pma.create_animated_drawing_dict(
+            base_path=base_path,
             ad_animation=ad_animation,
         )
 
     # then
-    assert tmp_path.joinpath(VIDEO_DIR_NAME).exists()
-    assert result is True
+    assert result["character_cfg"] == base_path.joinpath(CHAR_CFG_FILE_NAME).as_posix()
+    assert (
+        result["motion_cfg"]
+        == mock_config_dir_path.joinpath(f"motion/{ad_animation}.yaml").as_posix()
+    )
+    assert (
+        result["retarget_cfg"]
+        == mock_config_dir_path.joinpath("retarget/fair1_ppf.yaml").as_posix()
+    )
 
 
-def test_is_video_file_exists_False(tmp_path):
+def test_create_mvc_config():
     # given
-    video_dir_path = tmp_path / VIDEO_DIR_NAME
-    ad_animation = ADAnimation.dab
+    animated_drawing_dict = {
+        "character_cfg": "/path/to/character.yaml",
+        "motion_cfg": "/path/to/motion.yaml",
+        "retarget_cfg": "/path/to/retarget.yaml",
+    }
+    video_file_path = Path("/path/to/output/video.mp4")
+
+    # when
+    result = pma.create_mvc_config(
+        animated_drawing_dict=animated_drawing_dict,
+        video_file_path=video_file_path,
+    )
+
+    # then
+    assert result["scene"]["ANIMATED_CHARACTERS"] == [animated_drawing_dict]
+    assert result["controller"]["MODE"] == "video_render"
+    assert result["controller"]["OUTPUT_VIDEO_PATH"] == video_file_path.as_posix()
+
+
+def test_save_mvc_config(tmp_path):
+    # given
+    base_path = tmp_path
+    mvc_cfg = {
+        "scene": {"ANIMATED_CHARACTERS": [{}]},
+        "controller": {
+            "MODE": "video_render",
+            "OUTPUT_VIDEO_PATH": "/path/to/video.mp4",
+        },
+    }
+    expected_mvc_cfg_path = base_path.joinpath(MVC_CFG_FILE_NAME)
 
     # when
     with patch.object(
-        maf,
-        "get_video_dir_path",
-        return_value=video_dir_path,
-    ):
-        result = maf.is_video_file_exists(
-            ad_id="",
-            ad_animation=ad_animation,
+        pma,
+        "dict_to_file",
+        MagicMock(),
+    ) as mock_dict_to_file:
+        result = pma.save_mvc_config(
+            mvc_cfg=mvc_cfg,
+            base_path=base_path,
         )
 
     # then
-    assert tmp_path.joinpath(VIDEO_DIR_NAME).exists()
-    assert result is False
+    assert result == expected_mvc_cfg_path
+    mock_dict_to_file.assert_called_once_with(
+        to_save_dict=mvc_cfg,
+        file_path=expected_mvc_cfg_path,
+    )
