@@ -60,7 +60,7 @@ def test_is_video_file_exists_True(tmp_path):
 
     # then
     assert base_path.joinpath(VIDEO_DIR_NAME).exists()
-    assert result is True
+    assert result is None
 
 
 def test_is_video_file_exists_False(tmp_path):
@@ -68,6 +68,7 @@ def test_is_video_file_exists_False(tmp_path):
     base_path = tmp_path
     video_dir_path = base_path / VIDEO_DIR_NAME
     ad_animation = ADAnimation.dab
+    video_file_path = video_dir_path / get_video_file_name(ad_animation)
 
     # when
     with patch.object(
@@ -82,4 +83,4 @@ def test_is_video_file_exists_False(tmp_path):
 
     # then
     assert base_path.joinpath(VIDEO_DIR_NAME).exists()
-    assert result is False
+    assert result == video_file_path
