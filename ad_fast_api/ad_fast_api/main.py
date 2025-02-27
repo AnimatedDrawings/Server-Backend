@@ -24,8 +24,17 @@ def ping():
     return {"ad_fast_api test ping success!!"}
 
 
+@app.get("/ping_animated_drawings")
+def ping_animated_drawings(test_param: int):
+    from zerorpc import Client as zeroClient
+
+    client = zeroClient("tcp://animated_drawings:8001")
+    respone = client.ping(test_param)
+    return {"ping_animated_drawings": respone}
+
+
 if __name__ == "__main__":
     from ad_fast_api.workspace.sources import conf_workspace
 
     conf_workspace.FILES_PATH.mkdir(exist_ok=True)
-    uvicorn.run("main:app", host="0.0.0.0", port=8000, reload=True)
+    uvicorn.run("ad_fast_api.main:app", host="0.0.0.0", port=8000, reload=True)

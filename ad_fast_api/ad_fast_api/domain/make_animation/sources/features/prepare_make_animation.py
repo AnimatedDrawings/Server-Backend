@@ -37,6 +37,9 @@ def create_mvc_config(
         "scene": {
             "ANIMATED_CHARACTERS": [animated_drawing_dict]
         },  # add the character to the scene
+        "view": {
+            "USE_MESA": True,
+        },
         "controller": {
             "MODE": "video_render",  # 'video_render' or 'interactive'
             "OUTPUT_VIDEO_PATH": video_file_path.as_posix(),  # set the output location
