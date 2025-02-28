@@ -75,20 +75,12 @@ def prepare_make_animation(
     return animated_drawings_mvc_cfg_path
 
 
-def image_to_animation(
+async def image_to_animation(
     animated_drawings_mvc_cfg_path: Path,
 ):
-    response = client.render_start(
+    response = await asyncio.to_thread(
+        client.render_start,
         animated_drawings_mvc_cfg_path.as_posix(),
     )
+
     return response
-
-
-# async def image_to_animation(
-#     mvc_cfg_path: Path,
-# ):
-#     response = await asyncio.to_thread(
-#         client.render_start,
-#         mvc_cfg_path.as_posix(),
-#     )
-#     return response

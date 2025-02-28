@@ -31,8 +31,7 @@ RUN apt-get update && \
 
 WORKDIR /${WORK_DIR}
 
-# 저장소 클론하기, 패키지 설치
-RUN git clone https://github.com/facebookresearch/AnimatedDrawings.git
+COPY . .
 RUN cd AnimatedDrawings && pip install -e .
 
 # zerorpc 설치

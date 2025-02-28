@@ -120,20 +120,21 @@ def test_prepare_make_animation(
     assert result == expected_path
 
 
-# def test_image_to_animation():
-#     # 준비
-#     mvc_cfg_path = Path("/test/path/config.json")
-#     expected_response = {"status": "success"}
+@pytest.mark.asyncio
+async def test_image_to_animation():
+    # 준비
+    mvc_cfg_path = Path("/test/path/config.json")
+    expected_response = {"status": "success"}
 
-#     # client.render_start 메서드 모킹
-#     with patch.object(
-#         make_animation_feature.client,
-#         "render_start",
-#         return_value=expected_response,
-#     ) as mock_render_start:
-#         # 실행
-#         result = make_animation_feature.image_to_animation(mvc_cfg_path)
+    # client.render_start 메서드 모킹
+    with patch.object(
+        make_animation_feature.client,
+        "render_start",
+        return_value=expected_response,
+    ) as mock_render_start:
+        # 실행
+        result = await make_animation_feature.image_to_animation(mvc_cfg_path)
 
-#         # 검증
-#         mock_render_start.assert_called_once_with(mvc_cfg_path.as_posix())
-#         assert result == expected_response
+        # 검증
+        mock_render_start.assert_called_once_with(mvc_cfg_path.as_posix())
+        assert result == expected_response

@@ -18,7 +18,7 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
 RUN pip install --no-cache-dir poetry && \
     poetry config virtualenvs.create false
 
-WORKDIR /${WORK_DIR}
+WORKDIR /${WORK_DIR}/ad_fast_api
 
 # 먼저 pyproject.toml과 poetry.lock을 복사하여 의존성만 설치
 COPY pyproject.toml poetry.lock* ./
@@ -30,7 +30,7 @@ RUN poetry install --no-interaction --no-ansi --no-root
 COPY . .
 
 # ad_fast_api/workspace/files 디렉토리 생성
-RUN mkdir ad_fast_api/workspace/files
+RUN mkdir -p /ad_fast_api/workspace/files
 
 # 애플리케이션 실행 (모듈 방식으로 실행)
 CMD ["python", "-m", "ad_fast_api.main"]

@@ -3,32 +3,12 @@ import logging
 from pathlib import Path
 import os
 from animated_drawings.render import start  # type: ignore
-from animated_drawings.utils import resolve_ad_filepath  # type: ignore
 
 
 class RPCService:
     def ping(self, n):
         logging.info(f"ping called with argument: {n}")
         return f"animated_drawings connection successful! Received: {n}"
-
-    def test_ad_mkdir(self, path_str):
-
-        # current_dir = Path(__file__).parent
-        # path = Path(path_str)
-        # path = current_dir.joinpath(path)
-
-        path = Path(path_str)
-
-        # if path.exists():
-        #     return {"test_ad_mkdir": "success"}
-        # else:
-        #     return {"test_ad_mkdir": "failed"}
-
-        try:
-            resolve_ad_filepath(file_name=path, file_type="test file, yaml")
-            return {"test_ad_mkdir": "success"}
-        except Exception as e:
-            return {"test_ad_mkdir": "failed"}
 
     def render_start(self, mvc_cfg_file_path: str):
         return start(mvc_cfg_file_path)
