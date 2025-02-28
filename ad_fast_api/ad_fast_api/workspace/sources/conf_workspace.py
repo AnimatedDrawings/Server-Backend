@@ -1,12 +1,14 @@
 from pathlib import Path
 from typing import Optional
 
+FILES_DIR_NAME = "files"
+CONFIG_DIR_NAME = "config"
 
-FILES_PATH = Path(__file__).parent.parent.joinpath("files")
+FILES_PATH = Path(__file__).parent.parent.joinpath(FILES_DIR_NAME)
 ORIGIN_IMAGE_NAME = "origin_image.png"
 BOUNDING_BOX_FILE_NAME = "bounding_box.yaml"
-CROPPED_IMAGE_NAME = "cropped_image.png"
-MASK_IMAGE_NAME = "mask_image.png"
+CROPPED_IMAGE_NAME = "texture.png"
+MASK_IMAGE_NAME = "mask.png"
 CUTOUT_CHARACTER_IMAGE_NAME = "cutout_character_image.png"
 CHAR_CFG_FILE_NAME = "char_cfg.yaml"
 VIDEO_DIR_NAME = "video"

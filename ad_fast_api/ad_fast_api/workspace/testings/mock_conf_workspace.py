@@ -4,7 +4,8 @@ from pathlib import Path
 
 
 GARLIC_PATH = Path(__file__).parent.joinpath("garlic")
-GARLIC_TEST_PATH = Path(__file__).parent.joinpath("garlic_test")
+RESULT_GARLIC_AD_ID = "result_garlic"
+RESULT_GARLIC_PATH = Path(__file__).parent.joinpath(RESULT_GARLIC_AD_ID)
 
 
 def patcher_get_base_path(

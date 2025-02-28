@@ -34,7 +34,12 @@ def ping_animated_drawings(test_param: int):
 
 
 if __name__ == "__main__":
-    from ad_fast_api.workspace.sources import conf_workspace
+    from ad_fast_api.snippets.sources.ad_env import get_ad_env
 
-    conf_workspace.FILES_PATH.mkdir(exist_ok=True)
-    uvicorn.run("ad_fast_api.main:app", host="0.0.0.0", port=8000, reload=True)
+    internal_port = get_ad_env().internal_port
+    uvicorn.run(
+        "ad_fast_api.main:app",
+        host="0.0.0.0",
+        port=internal_port,
+        reload=True,
+    )

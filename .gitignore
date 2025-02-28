@@ -6,3 +6,6 @@ ADFastAPI/__pychache__/
 
 .env
 .vscode/
+
+workspace/files/*
+!workspace/files/empty.py

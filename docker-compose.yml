@@ -76,8 +76,14 @@ services:
     build:
       context: ./animated_drawings
       dockerfile: ./animated_drawings.Dockerfile
+      args:
+        WORK_DIR: ${ROOT_DIR}
+        INTERNAL_PORT: ${ANIMATED_DRAWINGS_INTERNAL_PORT}
+        ANIMATED_DRAWINGS_WORKSPACE_DIR: ${ANIMATED_DRAWINGS_WORKSPACE_DIR}
     expose:
-      - 8001
+      - ${ANIMATED_DRAWINGS_INTERNAL_PORT}
+    volumes:
+      - ./workspace:/${ROOT_DIR}/${ANIMATED_DRAWINGS_WORKSPACE_DIR}
     # restart: always
     networks:
       ad_server: {}
@@ -88,10 +94,15 @@ services:
     build:
       context: ./ad_fast_api
       dockerfile: ./ad_fast_api.Dockerfile
+      args:
+        WORK_DIR: ${ROOT_DIR}
+        INTERNAL_PORT: ${AD_FAST_API_INTERNAL_PORT}
+        ANIMATED_DRAWINGS_WORKSPACE_DIR: ${ANIMATED_DRAWINGS_WORKSPACE_DIR}
     ports:
-      - ${EXTERNAL_PORT}:8000
+      - ${AD_FAST_API_EXTERNAL_PORT}:${AD_FAST_API_INTERNAL_PORT}
     volumes:
-      - ./ad_fast_api:/app/
+      - ./ad_fast_api:/${ROOT_DIR}
+      - ./workspace/files:/${ROOT_DIR}/ad_fast_api/workspace/files
     # restart: always
     networks:
       ad_server: {}

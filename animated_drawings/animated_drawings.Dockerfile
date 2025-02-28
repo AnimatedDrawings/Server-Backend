@@ -1,6 +1,11 @@
 FROM python:3.8.13
 
-ENV PYTHONPATH "${PYTHONPATH}:/app/AnimatedDrawings"
+ARG WORK_DIR
+ARG INTERNAL_PORT
+ARG ANIMATED_DRAWINGS_WORKSPACE_DIR
+
+ENV INTERNAL_PORT=${INTERNAL_PORT}
+ENV PYTHONPATH "${PYTHONPATH}:/${WORK_DIR}/AnimatedDrawings"
 
 # install wget
 RUN apt-get update && \
@@ -24,17 +29,18 @@ RUN apt-get update && \
 RUN apt-get update && \
     apt-get install -y git
 
-WORKDIR /app
+WORKDIR /${WORK_DIR}
 
-# 저장소 클론하기
+# 저장소 클론하기, 패키지 설치
 RUN git clone https://github.com/facebookresearch/AnimatedDrawings.git
-
-# AnimatedDrawings 디렉토리에서 pip install 실행
 RUN cd AnimatedDrawings && pip install -e .
 
 # zerorpc 설치
-COPY ./rpc_server.py .
 RUN pip install zerorpc
+COPY ./rpc_server.py .
+
+# 도커볼륨 workspace 디렉토리 생성
+RUN mkdir -p /${ANIMATED_DRAWINGS_WORKSPACE_DIR}
 
 # rpc_server.py 실행
 CMD ["python", "rpc_server.py"]

@@ -137,7 +137,7 @@ def segment_character_garlic():
     fcf.cv2_save_image(
         image=mask_image,
         image_name="test_" + cw.MASK_IMAGE_NAME,
-        base_path=mcw.GARLIC_TEST_PATH,
+        base_path=mcw.RESULT_GARLIC_PATH,
     )
 
 

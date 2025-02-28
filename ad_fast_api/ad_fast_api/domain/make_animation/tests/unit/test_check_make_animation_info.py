@@ -42,7 +42,7 @@ def test_is_video_file_exists_True(tmp_path):
     video_dir_path = base_path / VIDEO_DIR_NAME
     video_dir_path.mkdir(exist_ok=True)
 
-    ad_animation = ADAnimation.dab
+    ad_animation = ADAnimation.dab.value
     video_file_name = get_video_file_name(ad_animation)
     video_file_path = video_dir_path / video_file_name
     video_file_path.touch()
@@ -67,7 +67,7 @@ def test_is_video_file_exists_False(tmp_path):
     # given
     base_path = tmp_path
     video_dir_path = base_path / VIDEO_DIR_NAME
-    ad_animation = ADAnimation.dab
+    ad_animation = ADAnimation.dab.value
     video_file_path = video_dir_path / get_video_file_name(ad_animation)
 
     # when
@@ -83,4 +83,4 @@ def test_is_video_file_exists_False(tmp_path):
 
     # then
     assert base_path.joinpath(VIDEO_DIR_NAME).exists()
-    assert result == video_file_path
+    assert result == video_file_path.relative_to(base_path)

@@ -28,4 +28,10 @@ def is_video_file_exists(
     video_file_name = get_video_file_name(ad_animation)
     video_file_path = video_dir_path.joinpath(video_file_name)
 
-    return None if video_file_path.exists() else video_file_path
+    # /video/dab.gif
+    relative_video_file_path = video_file_path.relative_to(base_path)
+
+    if video_file_path.exists():
+        return None
+    else:
+        return relative_video_file_path

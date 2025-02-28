@@ -1,2 +1,3 @@
-ad_fast_api/workspace/files/
-ad_fast_api/workspace/testings/garlic_test/
+ad_fast_api/workspace/files/*
+!ad_fast_api/workspace/files/empty.py
+ad_fast_api/workspace/testings/result_garlic/
