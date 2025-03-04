@@ -43,7 +43,7 @@ async def configure_skeleton(
     cropped_image: MatLike,
     base_path: Path,
     logger: Logger,
-):
+) -> dict:
     pose_result = await get_pose_result_async(
         cropped_image=cropped_image,
         logger=logger,
@@ -55,8 +55,10 @@ async def configure_skeleton(
     skeleton = make_skeleton(
         kpts=kpts,
     )
-    save_char_cfg(
+    char_cfg_dict = save_char_cfg(
         skeleton=skeleton,
         cropped_image=cropped_image,
         base_path=base_path,
     )
+
+    return char_cfg_dict

@@ -6,6 +6,9 @@ from ad_fast_api.domain.cutout_character.sources.features.cutout_character_featu
     configure_skeleton,
 )
 from ad_fast_api.snippets.sources.ad_logger import setup_logger
+from ad_fast_api.domain.cutout_character.sources.cutout_character_schema import (
+    CutoutCharacterResponse,
+)
 
 
 router = APIRouter()
@@ -15,7 +18,7 @@ router = APIRouter()
 async def cutout_character(
     ad_id: str,
     cutout_character_file: UploadFile,
-):
+) -> CutoutCharacterResponse:
     base_path = cw.get_base_path(ad_id=ad_id)
     logger = setup_logger(base_path=base_path)
 
@@ -27,10 +30,14 @@ async def cutout_character(
         status_code=500,
     )
 
-    await handle_operation_async(
+    char_cfg_dict = await handle_operation_async(
         configure_skeleton,
         cropped_image=cropped_image,
         base_path=base_path,
         logger=logger,
         status_code=501,
+    )
+
+    return CutoutCharacterResponse(
+        char_cfg=char_cfg_dict,
     )

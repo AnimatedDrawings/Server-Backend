@@ -13,7 +13,16 @@ from ad_fast_api.snippets.sources.ad_http_exception import handle_operation
 router = APIRouter()
 
 
-@router.post("/find_character")
+@router.post(
+    "/find_character",
+    response_class=FileResponse,
+    responses={
+        200: {
+            "content": {"image/png": {}},
+            "description": "Cutout character masked image file.",
+        }
+    },
+)
 def find_character(
     ad_id: str,
     bounding_box: BoundingBox,
@@ -36,5 +45,5 @@ def find_character(
         status_code=501,
     )
 
-    mask_image_path = base_path.joinpath(cw.CUTOUT_CHARACTER_IMAGE_NAME)
-    return FileResponse(mask_image_path.as_posix())
+    cutout_character_image_path = base_path.joinpath(cw.CUTOUT_CHARACTER_IMAGE_NAME)
+    return FileResponse(cutout_character_image_path.as_posix())

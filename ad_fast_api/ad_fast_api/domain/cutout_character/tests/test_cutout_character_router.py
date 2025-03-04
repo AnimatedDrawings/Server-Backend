@@ -15,6 +15,7 @@ def test_cutout_character_success(mock_client):
         "cutout_character_file": ("test.png", fake_test_file, "image/png")
     }
     fake_cropped_image = np.zeros((100, 100, 3), dtype=np.uint8)
+    fake_char_cfg_dict = {"dummy_key": "dummy_value"}  # 유효한 딕셔너리 반환값
 
     # when
     with patch.object(
@@ -30,7 +31,7 @@ def test_cutout_character_success(mock_client):
     ) as mock_save_image, patch.object(
         cutout_character_router,
         "configure_skeleton",
-        new=AsyncMock(),
+        new=AsyncMock(return_value=fake_char_cfg_dict),
     ) as mock_configure:
         response = mock_client.post(
             path,
@@ -67,7 +68,7 @@ def test_cutout_character_fail_status_code_500(mock_client):
     ) as mock_save_image, patch.object(
         cutout_character_router,
         "configure_skeleton",
-        new=AsyncMock(),
+        new=AsyncMock(return_value={}),
     ) as mock_configure:
         response = mock_client.post(
             path,

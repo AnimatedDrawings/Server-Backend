@@ -18,7 +18,16 @@ from ad_fast_api.domain.make_animation.sources.errors.make_animation_500_status 
 router = APIRouter()
 
 
-@router.post("/make_animation")
+@router.post(
+    "/make_animation",
+    response_class=FileResponse,
+    responses={
+        200: {
+            "content": {"image/gif": {}},
+            "description": "Animation gif file.",
+        }
+    },
+)
 async def make_animation(
     ad_id: str,
     ad_animation: str,

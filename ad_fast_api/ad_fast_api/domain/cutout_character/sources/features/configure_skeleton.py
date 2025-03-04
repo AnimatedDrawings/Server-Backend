@@ -181,7 +181,7 @@ def save_char_cfg(
     skeleton: list,
     cropped_image: MatLike,
     base_path: Path,
-):
+) -> dict:
     # create the character config dictionary
     char_cfg = {
         "skeleton": skeleton,
@@ -193,3 +193,5 @@ def save_char_cfg(
         to_save_dict=char_cfg,
         file_path=char_cfg_path,
     )
+
+    return char_cfg
