@@ -7,7 +7,8 @@ from ad_fast_api.snippets.sources.ad_http_exception import (
 from ad_fast_api.domain.make_animation.sources.features.make_animation_feature import (
     check_make_animation_info,
     prepare_make_animation,
-    image_to_animation,
+    image_to_animation_async,
+    get_file_response,
 )
 from ad_fast_api.workspace.sources.conf_workspace import get_base_path
 from ad_fast_api.domain.make_animation.sources.errors.make_animation_500_status import (
@@ -34,19 +35,18 @@ async def make_animation(
 ):
     base_path = get_base_path(ad_id=ad_id)
 
-    relative_video_file_path = handle_operation(
+    is_video_file_exists, relative_video_file_path = handle_operation(
         check_make_animation_info,
         base_path=base_path,
         ad_animation=ad_animation,
         status_code=500,
     )
 
-    video_file_path = base_path.joinpath(relative_video_file_path)
-    file_response = FileResponse(
-        video_file_path.as_posix(),
-        media_type="image/gif",
-    )
-    if relative_video_file_path is None:
+    if is_video_file_exists:
+        file_response = get_file_response(
+            base_path=base_path,
+            relative_video_file_path=relative_video_file_path,
+        )
         return file_response
 
     animated_drawings_mvc_cfg_path = handle_operation(
@@ -58,8 +58,8 @@ async def make_animation(
         status_code=501,
     )
 
-    response = handle_operation_async(
-        image_to_animation,
+    animation_task = await handle_operation_async(
+        image_to_animation_async,
         animated_drawings_mvc_cfg_path=animated_drawings_mvc_cfg_path,
         status_code=502,
     )
@@ -68,4 +68,8 @@ async def make_animation(
     if not video_file_path.exists():
         raise NOT_FOUND_ANIMATION_FILE
 
+    file_response = get_file_response(
+        base_path=base_path,
+        relative_video_file_path=relative_video_file_path,
+    )
     return file_response

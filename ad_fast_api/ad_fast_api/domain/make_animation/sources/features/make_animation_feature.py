@@ -1,7 +1,7 @@
-import asyncio
+from zero import AsyncZeroClient
 from pathlib import Path
-from typing import Optional
-from zerorpc import Client as zeroClient
+from typing import Tuple
+from fastapi.responses import FileResponse
 from ad_fast_api.domain.make_animation.sources.features.check_make_animation_info import (
     check_available_animation,
     is_video_file_exists,
@@ -18,17 +18,18 @@ from ad_fast_api.workspace.sources.conf_workspace import (
 )
 
 
-client = zeroClient(
-    "tcp://animated_drawings:8001",
-    heartbeat=120,
-    timeout=120,
+timeout = 60 * 1000
+zero_client = AsyncZeroClient(
+    "animated_drawings",
+    8001,
+    default_timeout=timeout,
 )
 
 
 def check_make_animation_info(
     base_path: Path,
     ad_animation: str,
-) -> Optional[Path]:
+) -> Tuple[bool, Path]:
     check_available_animation(
         ad_animation=ad_animation,
     )
@@ -75,12 +76,24 @@ def prepare_make_animation(
     return animated_drawings_mvc_cfg_path
 
 
-async def image_to_animation(
+async def image_to_animation_async(
     animated_drawings_mvc_cfg_path: Path,
 ):
-    response = await asyncio.to_thread(
-        client.render_start,
+    response = await zero_client.call(
+        "render_start",
         animated_drawings_mvc_cfg_path.as_posix(),
     )
 
     return response
+
+
+def get_file_response(
+    base_path: Path,
+    relative_video_file_path: Path,
+) -> FileResponse:
+    video_file_path = base_path.joinpath(relative_video_file_path)
+    file_response = FileResponse(
+        video_file_path.as_posix(),
+        media_type="image/gif",
+    )
+    return file_response

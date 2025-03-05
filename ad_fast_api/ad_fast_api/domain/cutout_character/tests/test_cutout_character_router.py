@@ -11,9 +11,7 @@ def test_cutout_character_success(mock_client):
     path = "/cutout_character"
     params = {"ad_id": ad_id}
     fake_test_file = io.BytesIO(b"fake image content")
-    fake_upload_file = {
-        "cutout_character_file": ("test.png", fake_test_file, "image/png")
-    }
+    fake_upload_file = {"file": ("test.png", fake_test_file, "image/png")}
     fake_cropped_image = np.zeros((100, 100, 3), dtype=np.uint8)
     fake_char_cfg_dict = {"dummy_key": "dummy_value"}  # 유효한 딕셔너리 반환값
 
@@ -49,9 +47,7 @@ def test_cutout_character_fail_status_code_500(mock_client):
     path = "/cutout_character"
     params = {"ad_id": ad_id}
     fake_test_file = io.BytesIO(b"fake image content")
-    fake_upload_file = {
-        "cutout_character_file": ("test.png", fake_test_file, "image/png")
-    }
+    fake_upload_file = {"file": ("test.png", fake_test_file, "image/png")}
     fake_cropped_image = np.zeros((100, 100, 3), dtype=np.uint8)
 
     # when
@@ -86,9 +82,7 @@ def test_cutout_character_fail_status_code_501(mock_client):
     path = "/cutout_character"
     params = {"ad_id": ad_id}
     fake_test_file = io.BytesIO(b"fake image content")
-    fake_upload_file = {
-        "cutout_character_file": ("test.png", fake_test_file, "image/png")
-    }
+    fake_upload_file = {"file": ("test.png", fake_test_file, "image/png")}
     fake_cropped_image = np.zeros((100, 100, 3), dtype=np.uint8)
 
     # when

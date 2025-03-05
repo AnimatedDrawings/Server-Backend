@@ -3,7 +3,6 @@ from ad_fast_api.domain.upload_drawing.sources.features.upload_drawing_feature i
     save_origin_image_async,
     detect_character,
 )
-from typing import Dict, Any
 from ad_fast_api.snippets.sources.ad_http_exception import handle_operation_async
 from ad_fast_api.domain.upload_drawing.sources.upload_drawing_schema import (
     UploadDrawingResponse,
@@ -14,7 +13,9 @@ router = APIRouter()
 
 
 @router.post("/upload_drawing")
-async def upload_drawing(file: UploadFile = File(...)) -> UploadDrawingResponse:
+async def upload_drawing(
+    file: UploadFile = File(...),
+) -> UploadDrawingResponse:
     ad_id = await handle_operation_async(
         save_origin_image_async, file=file, status_code=500
     )

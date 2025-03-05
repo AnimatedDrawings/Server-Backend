@@ -35,7 +35,7 @@ COPY . .
 RUN cd AnimatedDrawings && pip install -e .
 
 # zerorpc 설치
-RUN pip install zerorpc
+RUN pip install zeroapi
 COPY ./rpc_server.py .
 
 # 도커볼륨 workspace 디렉토리 생성

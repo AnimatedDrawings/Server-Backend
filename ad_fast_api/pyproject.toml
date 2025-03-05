@@ -21,7 +21,7 @@ dependencies = [
     "python-multipart (>=0.0.20,<0.0.21)",
     "scikit-image (>=0.25.2,<0.26.0)",
     "faker (>=36.1.1,<37.0.0)",
-    "zerorpc (>=0.6.3,<0.7.0)"
+    "zeroapi (>=0.8.0,<0.9.0)",
 ]
 
 

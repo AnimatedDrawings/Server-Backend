@@ -1,5 +1,7 @@
+import time
 import uvicorn
-from fastapi import FastAPI
+from fastapi import FastAPI, Request, Response, HTTPException
+from fastapi.responses import JSONResponse
 
 
 from ad_fast_api.domain.upload_drawing.sources import upload_drawing_router
@@ -19,6 +21,53 @@ app.include_router(configure_character_joints_router.router)
 app.include_router(make_animation_router.router)
 
 
+@app.middleware("http")
+async def add_process_time_header(request: Request, call_next):
+    start_time = time.time()
+    request_body = await request.body()
+
+    print()
+    print("-------------------------------------")
+    print(f"REQUEST_URL : {request.url}")
+    # print(f"REQUEST_BODY : {request_body}")
+    print(f"REQUEST_HEADERS : {request.headers}")
+
+    response = await call_next(request)
+
+    process_time = time.time() - start_time
+    print(f"PROCESS_TIME : {process_time}")
+    response_body = b""
+    async for chunk in response.body_iterator:
+        response_body += chunk
+
+    # 만약 HTTPException으로 인해 리턴된 JSON에 detail이 있다면
+    # try:
+    #     decoded_response = response_body.decode("utf-8")
+    #     print(f"RESPONSE_BODY : {decoded_response}")
+    # except UnicodeDecodeError:
+    #     pass
+
+    print("-------------------------------------")
+    return Response(
+        content=response_body,
+        status_code=response.status_code,
+        headers=dict(response.headers),
+        media_type=response.media_type,
+    )
+
+
+@app.exception_handler(HTTPException)
+async def http_exception_handler(request: Request, exc: HTTPException):
+    print()
+    print("#####################################")
+    print("######### HTTPException 발생 #########")
+    print(f"detail: {exc.detail}")
+    print(f"status_code: {exc.status_code}")
+    print("#####################################")
+    print()
+    return JSONResponse(status_code=exc.status_code, content={"detail": exc.detail})
+
+
 @app.get("/ping")
 def ping():
     return {"ad_fast_api test ping success!!"}
@@ -26,10 +75,11 @@ def ping():
 
 @app.get("/ping_animated_drawings")
 def ping_animated_drawings(test_param: int):
-    from zerorpc import Client as zeroClient
+    from zero import ZeroClient
 
-    client = zeroClient("tcp://animated_drawings:8001")
-    respone = client.ping(test_param)
+    zero_client = ZeroClient("animated_drawings", 8001)
+    respone = zero_client.call("ping", test_param)
+
     return {"ping_animated_drawings": respone}
 
 

@@ -9,7 +9,7 @@ from ad_fast_api.workspace.sources.conf_workspace import (
     get_video_file_name,
 )
 from pathlib import Path
-from typing import Optional
+from typing import Tuple
 
 
 def check_available_animation(ad_animation: str):
@@ -20,7 +20,7 @@ def check_available_animation(ad_animation: str):
 def is_video_file_exists(
     base_path: Path,
     ad_animation: str,
-) -> Optional[Path]:
+) -> Tuple[bool, Path]:
     video_dir_path = get_video_dir_path(
         base_path=base_path,
     )
@@ -30,8 +30,4 @@ def is_video_file_exists(
 
     # /video/dab.gif
     relative_video_file_path = video_file_path.relative_to(base_path)
-
-    if video_file_path.exists():
-        return None
-    else:
-        return relative_video_file_path
+    return (video_file_path.exists(), relative_video_file_path)

@@ -1,14 +1,9 @@
 import pytest
 from pathlib import Path
-from unittest.mock import patch
+from unittest.mock import patch, AsyncMock
 from ad_fast_api.domain.make_animation.sources.features import make_animation_feature
 from ad_fast_api.workspace.sources.conf_workspace import FILES_DIR_NAME
 from ad_fast_api.snippets.sources.ad_env import ADEnv
-
-# 테스트용 Dummy 환경 클래스
-# class DummyEnv:
-#     def __init__(self, animated_drawings_workspace_dir):
-#         self.animated_drawings_workspace_dir = animated_drawings_workspace_dir
 
 
 @patch.object(make_animation_feature, "check_available_animation")
@@ -121,20 +116,45 @@ def test_prepare_make_animation(
 
 
 @pytest.mark.asyncio
-async def test_image_to_animation():
-    # 준비
+async def test_image_to_animation_async():
     mvc_cfg_path = Path("/test/path/config.json")
     expected_response = {"status": "success"}
 
-    # client.render_start 메서드 모킹
     with patch.object(
-        make_animation_feature.client,
-        "render_start",
-        return_value=expected_response,
-    ) as mock_render_start:
-        # 실행
-        result = await make_animation_feature.image_to_animation(mvc_cfg_path)
+        make_animation_feature.zero_client,
+        "call",
+        new_callable=AsyncMock,
+    ) as mock_call:
+        mock_call.return_value = expected_response
 
-        # 검증
-        mock_render_start.assert_called_once_with(mvc_cfg_path.as_posix())
-        assert result == expected_response
+        response = await make_animation_feature.image_to_animation_async(mvc_cfg_path)
+
+        mock_call.assert_awaited_once_with("render_start", mvc_cfg_path.as_posix())
+        assert response == expected_response
+
+
+def test_get_file_response(tmp_path: Path):
+    # 임시 디렉토리(tmp_path)를 기본 경로로 사용
+    base_path = tmp_path
+
+    # 더미 GIF 파일 생성
+    dummy_file_name = "test.gif"
+    dummy_file_path = base_path / dummy_file_name
+    dummy_file_path.write_bytes(b"GIF89a")  # 간단한 GIF 헤더 기록
+
+    relative_video_file_path = Path(dummy_file_name)
+
+    # 함수 호출: FileResponse 반환
+    response = make_animation_feature.get_file_response(
+        base_path=base_path,
+        relative_video_file_path=relative_video_file_path,
+    )
+
+    # 생성된 파일의 전체 경로가 올바르게 설정되었는지 검증
+    expected_path = (base_path / relative_video_file_path).as_posix()
+    # FileResponse의 'path' 속성이 예상 경로와 같아야 합니다.
+    assert hasattr(response, "path")
+    assert response.path == expected_path
+
+    # 미디어 타입이 "image/gif"로 지정되었는지 체크
+    assert response.media_type == "image/gif"
