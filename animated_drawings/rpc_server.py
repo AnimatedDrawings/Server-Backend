@@ -22,8 +22,12 @@ def ping(n: int) -> str:
 
 
 @app.register_rpc
-def render_start(mvc_cfg_file_path: str) -> str:
-    return start(mvc_cfg_file_path)
+def render_start(mvc_cfg_file_path: str) -> dict:
+    try:
+        start(mvc_cfg_file_path)
+        return {"status": "success"}
+    except Exception as e:
+        return {"status": "fail", "message": str(e)}
 
 
 if __name__ == "__main__":
