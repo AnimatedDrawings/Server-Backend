@@ -84,7 +84,15 @@ async def image_to_animation_async(
         animated_drawings_mvc_cfg_path.as_posix(),
     )
 
-    return response
+    status = "status"
+    if response is None or status not in response:
+        raise Exception("애니메이션 렌더링에 실패, 알수없는 리턴값입니다.")
+
+    if response[status] == "success":
+        return
+
+    if response[status] == "fail":
+        raise Exception(response["message"])
 
 
 def get_file_response(

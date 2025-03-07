@@ -1,7 +1,4 @@
 import json
-from pathlib import Path
-
-import cv2
 import httpx
 import numpy as np
 import pytest

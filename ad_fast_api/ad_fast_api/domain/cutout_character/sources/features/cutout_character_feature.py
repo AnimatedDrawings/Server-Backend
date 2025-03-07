@@ -13,7 +13,10 @@ from ad_fast_api.domain.cutout_character.sources.features.configure_skeleton imp
     save_char_cfg,
 )
 from cv2.typing import MatLike
-from typing import Optional
+from ad_fast_api.domain.cutout_character.sources.cutout_character_schema import (
+    CutoutCharacterResponse,
+)
+from ad_fast_api.domain.schema.sources.schemas import Joints
 
 
 async def save_cutout_image(
@@ -39,7 +42,7 @@ async def save_cutout_image(
     return cropped_image
 
 
-async def configure_skeleton(
+async def configure_skeleton_async(
     cropped_image: MatLike,
     base_path: Path,
     logger: Logger,
@@ -62,3 +65,11 @@ async def configure_skeleton(
     )
 
     return char_cfg_dict
+
+
+def create_cutout_character_response(
+    char_cfg_dict: dict,
+) -> CutoutCharacterResponse:
+    return CutoutCharacterResponse(
+        char_cfg=Joints(**char_cfg_dict),
+    )

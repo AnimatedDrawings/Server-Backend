@@ -58,7 +58,7 @@ async def make_animation(
         status_code=501,
     )
 
-    animation_task = await handle_operation_async(
+    await handle_operation_async(
         image_to_animation_async,
         animated_drawings_mvc_cfg_path=animated_drawings_mvc_cfg_path,
         status_code=502,

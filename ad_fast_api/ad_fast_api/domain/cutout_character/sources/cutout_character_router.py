@@ -3,7 +3,8 @@ from ad_fast_api.workspace.sources import conf_workspace as cw
 from ad_fast_api.snippets.sources.ad_http_exception import handle_operation_async
 from ad_fast_api.domain.cutout_character.sources.features.cutout_character_feature import (
     save_cutout_image,
-    configure_skeleton,
+    configure_skeleton_async,
+    create_cutout_character_response,
 )
 from ad_fast_api.snippets.sources.ad_logger import setup_logger
 from ad_fast_api.domain.cutout_character.sources.cutout_character_schema import (
@@ -31,13 +32,12 @@ async def cutout_character(
     )
 
     char_cfg_dict = await handle_operation_async(
-        configure_skeleton,
+        configure_skeleton_async,
         cropped_image=cropped_image,
         base_path=base_path,
         logger=logger,
         status_code=501,
     )
 
-    return CutoutCharacterResponse(
-        char_cfg=char_cfg_dict,
-    )
+    response = create_cutout_character_response(char_cfg_dict)
+    return response

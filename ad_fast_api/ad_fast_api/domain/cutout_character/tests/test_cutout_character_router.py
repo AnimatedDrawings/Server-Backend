@@ -13,7 +13,7 @@ def test_cutout_character_success(mock_client):
     fake_test_file = io.BytesIO(b"fake image content")
     fake_upload_file = {"file": ("test.png", fake_test_file, "image/png")}
     fake_cropped_image = np.zeros((100, 100, 3), dtype=np.uint8)
-    fake_char_cfg_dict = {"dummy_key": "dummy_value"}  # 유효한 딕셔너리 반환값
+    fake_char_cfg_dict = {"width": 100, "height": 200, "skeleton": []}
 
     # when
     with patch.object(
@@ -28,7 +28,7 @@ def test_cutout_character_success(mock_client):
         ),
     ) as mock_save_image, patch.object(
         cutout_character_router,
-        "configure_skeleton",
+        "configure_skeleton_async",
         new=AsyncMock(return_value=fake_char_cfg_dict),
     ) as mock_configure:
         response = mock_client.post(
@@ -48,7 +48,6 @@ def test_cutout_character_fail_status_code_500(mock_client):
     params = {"ad_id": ad_id}
     fake_test_file = io.BytesIO(b"fake image content")
     fake_upload_file = {"file": ("test.png", fake_test_file, "image/png")}
-    fake_cropped_image = np.zeros((100, 100, 3), dtype=np.uint8)
 
     # when
     with patch.object(
@@ -63,7 +62,7 @@ def test_cutout_character_fail_status_code_500(mock_client):
         ),
     ) as mock_save_image, patch.object(
         cutout_character_router,
-        "configure_skeleton",
+        "configure_skeleton_async",
         new=AsyncMock(return_value={}),
     ) as mock_configure:
         response = mock_client.post(
@@ -98,7 +97,7 @@ def test_cutout_character_fail_status_code_501(mock_client):
         ),
     ) as mock_save_image, patch.object(
         cutout_character_router,
-        "configure_skeleton",
+        "configure_skeleton_async",
         new=AsyncMock(
             side_effect=Exception(),
         ),

@@ -113,7 +113,7 @@ async def test_configure_skeleton(monkeypatch, mock_logger, tmp_path):
     monkeypatch.setattr(ccf, "save_char_cfg", fake_save_char_cfg)
 
     # 테스트 대상 함수 호출
-    await ccf.configure_skeleton(
+    await ccf.configure_skeleton_async(
         cropped_image=dummy_cropped_image,  # type: ignore
         base_path=base_path,
         logger=mock_logger,
