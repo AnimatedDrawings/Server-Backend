@@ -19,7 +19,7 @@ from ad_fast_api.domain.cutout_character.sources.cutout_character_schema import 
 from ad_fast_api.domain.schema.sources.schemas import Joints
 
 
-async def save_cutout_image(
+async def save_cutout_image_async(
     file: UploadFile,
     base_path: Path,
     logger: Logger,

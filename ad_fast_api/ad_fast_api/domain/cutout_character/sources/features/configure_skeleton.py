@@ -44,6 +44,32 @@ async def get_pose_result_async(
         return pose_results
 
 
+def get_pose_result(
+    cropped_image: MatLike,
+    logger: Logger,
+    url: Optional[str] = None,
+) -> list[dict] | dict:
+    data_file = {"data": cv2.imencode(".png", cropped_image)[1].tobytes()}
+    with httpx.Client(verify=False) as client:
+        try:
+            resp = client.post(
+                url or GET_SKELETON_TORCHSERVE_URL,
+                files=data_file,
+            )
+        except Exception as e:
+            msg = cc5s.GET_SKELETON_TORCHSERVE_ERROR.format(resp=str(e))
+            logger.critical(msg)
+            raise Exception(msg)
+
+        if resp is None or resp.status_code >= 300:
+            msg = cc5s.GET_SKELETON_TORCHSERVE_ERROR.format(resp=resp)
+            logger.critical(msg)
+            raise Exception(msg)
+
+        pose_results = json.loads(resp.content)
+        return pose_results
+
+
 def check_pose_results(
     pose_results: list[dict] | dict,
     logger: Logger,
@@ -195,3 +221,34 @@ def save_char_cfg(
     )
 
     return char_cfg
+
+
+if __name__ == "__main__":
+    import asyncio
+    from ad_fast_api.workspace.testings import mock_conf_workspace as mcw
+    from ad_fast_api.workspace.sources import conf_workspace as cw
+    from ad_fast_api.snippets.sources.ad_logger import setup_logger
+
+    base_path = mcw.TMP_WORKSPACE_FILES
+    request_files_path = mcw.REQUEST_FILES_PATH
+    logger = setup_logger(base_path=base_path)
+
+    url = "http://localhost:8080/predictions/drawn_humanoid_pose_estimator"
+    cropped_image_path = request_files_path / cw.CROPPED_IMAGE_NAME
+    cropped_image = cv2.imread(cropped_image_path.as_posix(), cv2.IMREAD_UNCHANGED)
+
+    # response = asyncio.run(
+    #     get_pose_result_async(
+    #         cropped_image=cropped_image,
+    #         logger=logger,
+    #         url=url,
+    #     ),
+    # )
+
+    response = get_pose_result(
+        cropped_image=cropped_image,
+        logger=logger,
+        url=url,
+    )
+
+    print(response)

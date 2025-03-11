@@ -3,14 +3,17 @@ services:
     build:
       context: ./animated_drawings/AnimatedDrawings/torchserve/
       dockerfile: Dockerfile
-    expose:
-      - 8080
-      - 8081
+    # expose:
+    #   - 8080
+    #   - 8081
+    ports:
+      - 8080:8080
+      - 8081:8081
     restart: always
-    # deploy:
-    #   resources:
-    #     limits:
-    #       memory: 64g
+    deploy:
+      resources:
+        limits:
+          memory: 64g
     networks:
       ad_server: {}
 
@@ -30,10 +33,10 @@ services:
       - ./animated_drawings/AnimatedDrawings:/${ROOT_DIR}/AnimatedDrawings
       - ./workspace:/${ROOT_DIR}/${ANIMATED_DRAWINGS_WORKSPACE_DIR}
     restart: always
-    deploy:
-      resources:
-        limits:
-          memory: 64g
+    # deploy:
+    #   resources:
+    #     limits:
+    #       memory: 64g
     networks:
       ad_server: {}
 

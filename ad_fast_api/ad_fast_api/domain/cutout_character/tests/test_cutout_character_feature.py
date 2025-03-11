@@ -38,7 +38,7 @@ async def test_save_cutout_image_success(tmp_path, mock_logger):
     upload_file = UploadFile(filename="test_cutout.png", file=file_bytes)
 
     # 3. save_cutout_image 함수 호출
-    await ccf.save_cutout_image(
+    await ccf.save_cutout_image_async(
         file=upload_file, base_path=tmp_path, logger=mock_logger
     )
 

@@ -1,0 +1,2 @@
+2025-03-08 16:29:49,879 - log.txt - CRITICAL - Failed to get bounding box, please check if the 'docker_torchserve' is running and healthy, resp: [Errno -2] Name or service not known
+2025-03-08 16:50:46,041 - log.txt - INFO - Detected 1 humanoids in image. Using detection with highest score 0.9985758066177368.

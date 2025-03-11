@@ -22,7 +22,7 @@ def test_cutout_character_success(mock_client):
         return_value=mock_logger,
     ), patch.object(
         cutout_character_router,
-        "save_cutout_image",
+        "save_cutout_image_async",
         new=AsyncMock(
             return_value=fake_cropped_image,
         ),
@@ -56,7 +56,7 @@ def test_cutout_character_fail_status_code_500(mock_client):
         return_value=mock_logger,
     ), patch.object(
         cutout_character_router,
-        "save_cutout_image",
+        "save_cutout_image_async",
         new=AsyncMock(
             side_effect=Exception(),
         ),
@@ -91,7 +91,7 @@ def test_cutout_character_fail_status_code_501(mock_client):
         return_value=mock_logger,
     ), patch.object(
         cutout_character_router,
-        "save_cutout_image",
+        "save_cutout_image_async",
         new=AsyncMock(
             return_value=fake_cropped_image,
         ),
