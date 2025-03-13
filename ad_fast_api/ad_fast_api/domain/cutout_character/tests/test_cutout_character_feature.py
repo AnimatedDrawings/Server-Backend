@@ -11,7 +11,7 @@ from ad_fast_api.snippets.testings.mock_logger import mock_logger
 
 
 @pytest.mark.asyncio
-async def test_save_cutout_image_success(tmp_path, mock_logger):
+async def test_save_cutout_image_success_async(tmp_path, mock_logger):
     """
     성공 케이스 테스트:
     - 임시 폴더에 cropped 이미지 (기준: 100x100, 3채널)를 미리 생성
@@ -75,7 +75,7 @@ async def test_save_cutout_image_success(tmp_path, mock_logger):
 
 
 @pytest.mark.asyncio
-async def test_configure_skeleton(monkeypatch, mock_logger, tmp_path):
+async def test_configure_skeleton_async(monkeypatch, mock_logger, tmp_path):
     """
     configure_skeleton 함수가 정상적으로 동작하여
     save_char_cfg에 올바른 인자를 전달하는지 테스트합니다.
@@ -88,6 +88,9 @@ async def test_configure_skeleton(monkeypatch, mock_logger, tmp_path):
     call_args = {}
 
     # 의존성 함수들의 더미 구현
+    def fake_get_cropped_image(base_path, logger):
+        return dummy_cropped_image
+
     async def fake_get_pose_result_async(cropped_image, logger):
         # dummy pose 결과 반환
         return "dummy_pose_result"
@@ -107,6 +110,7 @@ async def test_configure_skeleton(monkeypatch, mock_logger, tmp_path):
         call_args["base_path"] = base_path
 
     # monkeypatch를 이용해 의존성 함수들을 가짜 구현으로 대체
+    monkeypatch.setattr(ccf, "get_cropped_image", fake_get_cropped_image)
     monkeypatch.setattr(ccf, "get_pose_result_async", fake_get_pose_result_async)
     monkeypatch.setattr(ccf, "check_pose_results", fake_check_pose_results)
     monkeypatch.setattr(ccf, "make_skeleton", fake_make_skeleton)
@@ -114,7 +118,7 @@ async def test_configure_skeleton(monkeypatch, mock_logger, tmp_path):
 
     # 테스트 대상 함수 호출
     await ccf.configure_skeleton_async(
-        cropped_image=dummy_cropped_image,  # type: ignore
+        # cropped_image=dummy_cropped_image,  # type: ignore
         base_path=base_path,
         logger=mock_logger,
     )

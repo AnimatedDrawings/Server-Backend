@@ -1,12 +1,9 @@
 from ad_fast_api.workspace.sources.conf_workspace import (
-    FILES_DIR_NAME,
     CHAR_CFG_FILE_NAME,
-    MVC_CFG_FILE_NAME,
     CONFIG_DIR_NAME,
 )
 from pathlib import Path
 from ad_fast_api.snippets.sources.save_dict import dict_to_file
-from ad_fast_api.snippets.sources.ad_env import get_ad_env
 
 
 def create_animated_drawing_dict(

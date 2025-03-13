@@ -20,3 +20,12 @@ def configure_character_joints(
         ad_id=ad_id,
         status_code=500,
     )
+
+
+# if __name__ == "__main__":
+#     from ad_fast_api.workspace.testings import mock_conf_workspace as mcw
+
+#     ad_id = "result_exmaple1"
+#     joints = Joints(
+#         joints=[],
+#     )

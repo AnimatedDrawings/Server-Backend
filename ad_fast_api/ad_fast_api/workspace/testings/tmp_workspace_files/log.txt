@@ -1,3 +1,5 @@
 2025-03-11 14:41:16,277 - log.txt - INFO - Detected 1 humanoids in image. Using detection with highest score 0.998687207698822.
 2025-03-11 14:49:33,629 - log.txt - CRITICAL - Failed to get skeletons, please check if the 'docker_torchserve' is running and healthy, resp: [Errno -2] Name or service not known
 2025-03-11 14:57:28,129 - log.txt - CRITICAL - Failed to get skeletons, please check if the 'docker_torchserve' is running and healthy, resp: [Errno -2] Name or service not known
+2025-03-11 17:54:15,245 - log.txt - CRITICAL - Failed to get skeletons, please check if the 'docker_torchserve' is running and healthy, resp: [Errno 111] Connection refused
+2025-03-11 17:55:30,606 - log.txt - CRITICAL - Failed to get skeletons, please check if the 'docker_torchserve' is running and healthy, resp: timed out

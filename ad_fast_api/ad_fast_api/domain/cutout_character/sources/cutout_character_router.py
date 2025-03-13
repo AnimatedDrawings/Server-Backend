@@ -1,6 +1,9 @@
 from fastapi import APIRouter, UploadFile, File
 from ad_fast_api.workspace.sources import conf_workspace as cw
-from ad_fast_api.snippets.sources.ad_http_exception import handle_operation_async
+from ad_fast_api.snippets.sources.ad_http_exception import (
+    handle_operation_async,
+    handle_operation,
+)
 from ad_fast_api.domain.cutout_character.sources.features.cutout_character_feature import (
     save_cutout_image_async,
     configure_skeleton_async,
@@ -23,7 +26,7 @@ async def cutout_character(
     base_path = cw.get_base_path(ad_id=ad_id)
     logger = setup_logger(base_path=base_path)
 
-    cropped_image = await handle_operation_async(
+    await handle_operation_async(
         save_cutout_image_async,
         file=file,
         base_path=base_path,
@@ -33,7 +36,6 @@ async def cutout_character(
 
     char_cfg_dict = await handle_operation_async(
         configure_skeleton_async,
-        cropped_image=cropped_image,
         base_path=base_path,
         logger=logger,
         status_code=501,

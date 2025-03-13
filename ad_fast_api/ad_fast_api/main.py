@@ -25,10 +25,11 @@ def ping():
 
 @app.get("/ping_animated_drawings")
 def ping_animated_drawings(test_param: int):
-    from zero import ZeroClient
+    from ad_fast_api.domain.make_animation.sources.features.image_to_animation import (
+        get_zero_client,
+    )
 
-    zero_client = ZeroClient("animated_drawings", 8001)
-    respone = zero_client.call("ping", test_param)
+    respone = get_zero_client().call("ping", test_param)
 
     return {"ping_animated_drawings": respone}
 

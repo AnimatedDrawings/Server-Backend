@@ -27,11 +27,14 @@ services:
         WORK_DIR: ${ROOT_DIR}
         INTERNAL_PORT: ${ANIMATED_DRAWINGS_INTERNAL_PORT}
         ANIMATED_DRAWINGS_WORKSPACE_DIR: ${ANIMATED_DRAWINGS_WORKSPACE_DIR}
-    expose:
-      - ${ANIMATED_DRAWINGS_INTERNAL_PORT}
+    # expose:
+    #   - ${ANIMATED_DRAWINGS_INTERNAL_PORT}
+    ports:
+    - ${ANIMATED_DRAWINGS_INTERNAL_PORT}:${ANIMATED_DRAWINGS_INTERNAL_PORT}
     volumes:
       - ./animated_drawings/AnimatedDrawings:/${ROOT_DIR}/AnimatedDrawings
-      - ./workspace:/${ROOT_DIR}/${ANIMATED_DRAWINGS_WORKSPACE_DIR}
+      # - ./workspace:/${ROOT_DIR}/${ANIMATED_DRAWINGS_WORKSPACE_DIR}
+      - ./workspace:/${ROOT_DIR}/AnimatedDrawings/${ANIMATED_DRAWINGS_WORKSPACE_DIR}
     restart: always
     # deploy:
     #   resources:

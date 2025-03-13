@@ -1,7 +1,7 @@
 import logging
 import os
 from zero import ZeroServer
-from animated_drawings.render import start  # type: ignore
+from animated_drawings import render  # type: ignore
 
 
 def get_internal_port():
@@ -24,10 +24,22 @@ def ping(n: int) -> str:
 @app.register_rpc
 def render_start(mvc_cfg_file_path: str) -> dict:
     try:
-        start(mvc_cfg_file_path)
+        render.start(mvc_cfg_file_path)
         return {"status": "success"}
     except Exception as e:
+        logging.error(f"render_start failed: {e}")
         return {"status": "fail", "message": str(e)}
+
+
+"""
+rpc_server > render_start called with argument: workspace/files/result_exmaple1/mvc_cfg.yaml
+config > Using user-specified mvc config file located at /app/AnimatedDrawings/workspace/files/result_exmaple1/mvc_cfg.yaml
+
+
+rpc_server > render_start called, argument: workspace/files/result_exmaple1/mvc_cfg.yaml
+config > Using user-specified mvc config file located at /app/AnimatedDrawings/animated_drawings/app/workspace/files/result_exmaple1/mvc_cfg.yaml
+rpc_server > render_start failed: [Errno 2] No such file or directory: '/app/AnimatedDrawings/animated_drawings/app/workspace/files/result_exmaple1/mvc_cfg.yaml'
+"""
 
 
 if __name__ == "__main__":

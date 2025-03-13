@@ -6,6 +6,7 @@ from typing import Optional
 from ad_fast_api.domain.cutout_character.sources.errors import (
     cutout_character_500_status as cc5s,
 )
+from ad_fast_api.workspace.sources import conf_workspace as cw
 from logging import Logger
 import json
 from pathlib import Path
@@ -18,8 +19,22 @@ GET_SKELETON_TORCHSERVE_URL = (
 )
 
 
+def get_cropped_image(
+    base_path: Path,
+    logger: Logger,
+):
+    cropped_image_path = base_path / cw.CROPPED_IMAGE_NAME
+    cropped_image = cv2.imread(cropped_image_path.as_posix())
+    if cropped_image is None:
+        msg = cc5s.NOT_FOUND_CROPPED_IMAGE.format(cropped_image_path=cropped_image_path)
+        logger.critical(msg)
+        raise Exception(msg)
+
+    return cropped_image
+
+
 async def get_pose_result_async(
-    cropped_image: MatLike,
+    cropped_image,
     logger: Logger,
     url: Optional[str] = None,
 ) -> list[dict] | dict:
@@ -235,20 +250,17 @@ if __name__ == "__main__":
 
     url = "http://localhost:8080/predictions/drawn_humanoid_pose_estimator"
     cropped_image_path = request_files_path / cw.CROPPED_IMAGE_NAME
-    cropped_image = cv2.imread(cropped_image_path.as_posix(), cv2.IMREAD_UNCHANGED)
-
-    # response = asyncio.run(
-    #     get_pose_result_async(
-    #         cropped_image=cropped_image,
-    #         logger=logger,
-    #         url=url,
-    #     ),
-    # )
-
-    response = get_pose_result(
-        cropped_image=cropped_image,
+    cropped_image = get_cropped_image(
+        base_path=base_path,
         logger=logger,
-        url=url,
+    )
+
+    response = asyncio.run(
+        get_pose_result_async(
+            cropped_image=cropped_image,
+            logger=logger,
+            url=url,
+        ),
     )
 
     print(response)

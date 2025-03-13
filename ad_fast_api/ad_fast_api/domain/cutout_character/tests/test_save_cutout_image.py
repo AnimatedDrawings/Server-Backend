@@ -128,15 +128,11 @@ def test_resize_cutout_image_downscale(tmp_path, mock_logger):
     cv2.imwrite(str(cropped_path), cropped_image)
     cv2.imwrite(str(cutout_path), cutout_image)
 
-    result = sci.resize_cutout_image(
+    resized_cutout_image = sci.resize_cutout_image(
         base_path=tmp_path,
         logger=mock_logger,
     )
 
-    # resized 이미지의 크기가 cropped 이미지의 크기와 동일해야 함
-    if result is None:
-        raise Exception("result is None")
-    (cropped_image, resized_cutout_image) = result
     assert resized_cutout_image is not None
     assert resized_cutout_image.shape[:2] == (100, 100)
 
@@ -156,14 +152,11 @@ def test_resize_cutout_image_upscale(tmp_path, mock_logger):
     cv2.imwrite(str(cropped_path), cropped_image)
     cv2.imwrite(str(cutout_path), cutout_image)
 
-    result = sci.resize_cutout_image(
+    resized_cutout_image = sci.resize_cutout_image(
         base_path=tmp_path,
         logger=mock_logger,
     )
 
-    if result is None:
-        raise Exception("result is None")
-    (cropped_image, resized_cutout_image) = result
     assert resized_cutout_image is not None
     assert resized_cutout_image.shape[:2] == (150, 150)
 

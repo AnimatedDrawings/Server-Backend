@@ -11,8 +11,8 @@ from ad_fast_api.domain.cutout_character.sources.features.configure_skeleton imp
     check_pose_results,
     make_skeleton,
     save_char_cfg,
+    get_cropped_image,
 )
-from cv2.typing import MatLike
 from ad_fast_api.domain.cutout_character.sources.cutout_character_schema import (
     CutoutCharacterResponse,
 )
@@ -23,12 +23,12 @@ async def save_cutout_image_async(
     file: UploadFile,
     base_path: Path,
     logger: Logger,
-) -> MatLike:
+):
     await save_cutout_character_image_async(
         file=file,
         base_path=base_path,
     )
-    cropped_image, cutout_image = resize_cutout_image(
+    cutout_image = resize_cutout_image(
         base_path=base_path,
         logger=logger,
     )
@@ -39,14 +39,16 @@ async def save_cutout_image_async(
         logger=logger,
     )
 
-    return cropped_image
-
 
 async def configure_skeleton_async(
-    cropped_image: MatLike,
     base_path: Path,
     logger: Logger,
 ) -> dict:
+    cropped_image = get_cropped_image(
+        base_path=base_path,
+        logger=logger,
+    )
+
     pose_result = await get_pose_result_async(
         cropped_image=cropped_image,
         logger=logger,

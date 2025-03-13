@@ -30,13 +30,13 @@ async def save_cutout_character_image_async(
 def resize_cutout_image(
     base_path: Path,
     logger: Logger,
-) -> Tuple[MatLike, MatLike]:
+) -> MatLike:
     # 경로 처리
     cropped_image_path = base_path / cw.CROPPED_IMAGE_NAME
     cutout_image_path = base_path / cw.CUTOUT_CHARACTER_IMAGE_NAME
 
     # cropped_image 읽기 (사이즈 기준)
-    cropped_image = cv2.imread(str(cropped_image_path), cv2.IMREAD_UNCHANGED)
+    cropped_image = cv2.imread(cropped_image_path.as_posix(), cv2.IMREAD_UNCHANGED)
     if cropped_image is None:
         msg = cc5s.NOT_FOUND_CROPPED_IMAGE.format(cropped_image_path=cropped_image_path)
         logger.critical(msg)
@@ -44,7 +44,7 @@ def resize_cutout_image(
     height, width = cropped_image.shape[:2]
 
     # cutout_image 읽기
-    cutout_image = cv2.imread(str(cutout_image_path), cv2.IMREAD_UNCHANGED)
+    cutout_image = cv2.imread(cutout_image_path.as_posix(), cv2.IMREAD_UNCHANGED)
     if cutout_image is None:
         msg = cc5s.NOT_FOUND_CUTOUT_CHARACTER_IMAGE.format(
             cutout_character_image_path=cutout_image_path
@@ -54,7 +54,7 @@ def resize_cutout_image(
 
     # 이미 크기가 동일하면 resize 생략
     if cutout_image.shape[0] == height and cutout_image.shape[1] == width:
-        return (cropped_image, cutout_image)
+        return cutout_image
 
     # 축소할 경우 INTER_AREA, 확대할 경우 INTER_LINEAR 사용
     if cutout_image.shape[0] > height or cutout_image.shape[1] > width:
@@ -66,14 +66,14 @@ def resize_cutout_image(
         cutout_image, dsize=(width, height), interpolation=interp
     )
 
-    if not cv2.imwrite(str(cutout_image_path), resized_cutout_image):
+    if not cv2.imwrite(cutout_image_path.as_posix(), resized_cutout_image):
         msg = cc5s.FAILED_TO_WRITE_CUTOUT_IMAGE.format(
             cutout_image_path=cutout_image_path
         )
         logger.critical(msg)
         raise Exception(msg)
 
-    return (cropped_image, resized_cutout_image)
+    return resized_cutout_image
 
 
 def recreate_mask_image(

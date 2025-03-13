@@ -2,8 +2,8 @@ import json
 import httpx
 import numpy as np
 import pytest
-
-# 테스트 대상 모듈 import
+import cv2
+from unittest.mock import patch
 from ad_fast_api.domain.cutout_character.sources.features import (
     configure_skeleton as cs,
 )
@@ -12,6 +12,51 @@ from ad_fast_api.snippets.testings.mock_logger import mock_logger
 from ad_fast_api.domain.cutout_character.sources.errors import (
     cutout_character_500_status as cc5s,
 )
+from ad_fast_api.workspace.sources import conf_workspace as cw
+
+
+def test_get_cropped_image_success(mock_logger, tmp_path):
+    # given
+    base_path = tmp_path
+    cropped_image = "cropped_image"
+
+    # when
+    with patch.object(
+        cv2,
+        "imread",
+        return_value=cropped_image,
+    ):
+        result = cs.get_cropped_image(
+            base_path=base_path,
+            logger=mock_logger,
+        )
+
+    # then
+    assert result == cropped_image
+
+
+def test_get_cropped_image_fail(mock_logger, tmp_path):
+    # given
+    base_path = tmp_path
+    cropped_image = None
+
+    # when
+    with patch.object(
+        cv2,
+        "imread",
+        return_value=cropped_image,
+    ), pytest.raises(Exception) as excinfo:
+        cs.get_cropped_image(
+            base_path=base_path,
+            logger=mock_logger,
+        )
+
+    # then
+    expect_msg = cc5s.NOT_FOUND_CROPPED_IMAGE.format(
+        cropped_image_path=base_path / cw.CROPPED_IMAGE_NAME
+    )
+    assert str(excinfo.value) == expect_msg
+    mock_logger.critical.assert_called_once_with(expect_msg)
 
 
 # -------------------------------

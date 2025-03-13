@@ -39,7 +39,9 @@ RUN pip install zeroapi
 COPY ./rpc_server.py .
 
 # 도커볼륨 workspace 디렉토리 생성
-RUN mkdir -p /${ANIMATED_DRAWINGS_WORKSPACE_DIR}
+# RUN mkdir -p /AnimatedDrawings/animated_drawings/${ANIMATED_DRAWINGS_WORKSPACE_DIR}/files
+# RUN mkdir -p /${ANIMATED_DRAWINGS_WORKSPACE_DIR}/files
+# COPY ./files /${ANIMATED_DRAWINGS_WORKSPACE_DIR}/files
 
 # rpc_server.py 실행
 CMD ["python", "rpc_server.py"]
