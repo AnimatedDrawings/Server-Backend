@@ -15,7 +15,7 @@ async def test_render_start_async_no_status():
     expected_response = None
 
     with patch.object(
-        image_to_animation.zero_client,
+        image_to_animation.AsyncZeroClient,
         "call",
         new_callable=AsyncMock,
     ) as mock_call:
@@ -37,7 +37,7 @@ async def test_image_to_animation_async_failure():
     expected_response = {"status": "fail", "message": "failure occurred"}
 
     with patch.object(
-        image_to_animation.zero_client,
+        image_to_animation.AsyncZeroClient,
         "call",
         new_callable=AsyncMock,
     ) as mock_call:
@@ -59,7 +59,7 @@ async def test_image_to_animation_async_success():
     expected_response = {"status": "success"}
 
     with patch.object(
-        image_to_animation.zero_client,
+        image_to_animation.AsyncZeroClient,
         "call",
         new_callable=AsyncMock,
     ) as mock_call:

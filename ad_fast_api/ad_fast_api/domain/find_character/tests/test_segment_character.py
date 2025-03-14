@@ -5,12 +5,6 @@ from ad_fast_api.domain.find_character.sources.features import (
     segment_character as sc,
 )
 from ad_fast_api.snippets.testings.mock_logger import mock_logger
-from ad_fast_api.domain.find_character.sources.features import (
-    find_character_feature as fcf,
-)
-from ad_fast_api.workspace.testings import mock_conf_workspace as mcw
-from ad_fast_api.snippets.sources.ad_logger import setup_logger
-from ad_fast_api.workspace.sources import conf_workspace as cw
 from ad_fast_api.domain.find_character.sources.features import segment_character as sc
 from ad_fast_api.domain.find_character.sources.errors import (
     find_character_500_status as fcs,
@@ -121,25 +115,3 @@ def test_segment_character(mock_logger):
 
     # 추출된 마스크에 'A' 영역(255인 영역)이 존재해야 함
     assert np.count_nonzero(mask) > 0
-
-
-def segment_character_garlic():
-    logger = setup_logger(base_path=mcw.GARLIC_PATH)
-
-    cropped_image_path = mcw.GARLIC_PATH.joinpath(cw.CROPPED_IMAGE_NAME)
-    img = cv2.imread(cropped_image_path.as_posix())
-
-    mask_image = sc.segment_character(
-        img=img,
-        logger=logger,
-    )
-
-    fcf.cv2_save_image(
-        image=mask_image,
-        image_name="test_" + cw.MASK_IMAGE_NAME,
-        base_path=mcw.RESULT_GARLIC_PATH,
-    )
-
-
-if __name__ == "__main__":
-    segment_character_garlic()

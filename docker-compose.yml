@@ -10,10 +10,11 @@ services:
       - 8080:8080
       - 8081:8081
     restart: always
-    deploy:
-      resources:
-        limits:
-          memory: 64g
+    # deploy:
+    #   resources:
+    #     limits:
+    #       cpus: 0.5
+    #       memory: 64g
     networks:
       ad_server: {}
 
@@ -36,10 +37,11 @@ services:
       # - ./workspace:/${ROOT_DIR}/${ANIMATED_DRAWINGS_WORKSPACE_DIR}
       - ./workspace:/${ROOT_DIR}/AnimatedDrawings/${ANIMATED_DRAWINGS_WORKSPACE_DIR}
     restart: always
-    # deploy:
-    #   resources:
-    #     limits:
-    #       memory: 64g
+    deploy:
+      resources:
+        limits:
+          cpus: 0.5
+          # memory: 64g
     networks:
       ad_server: {}
 
@@ -59,10 +61,11 @@ services:
       - ./ad_fast_api:/${ROOT_DIR}/ad_fast_api
       - ./workspace/files:/${ROOT_DIR}/ad_fast_api/ad_fast_api/workspace/files
     restart: always
-    # deploy:
-    #   resources:
-    #     limits:
-    #       memory: 64g
+    deploy:
+      resources:
+        limits:
+          cpus: 0.5
+          # memory: 64g
     networks:
       ad_server: {}
 

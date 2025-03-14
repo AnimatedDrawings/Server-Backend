@@ -47,28 +47,3 @@ def find_character(
 
     cutout_character_image_path = base_path.joinpath(cw.CUTOUT_CHARACTER_IMAGE_NAME)
     return FileResponse(cutout_character_image_path.as_posix())
-
-
-if __name__ == "__main__":
-    from ad_fast_api.workspace.testings import mock_conf_workspace as mcw
-    from unittest.mock import patch
-    import yaml
-
-    ad_id = mcw.TMP_AD_ID
-    base_path = mcw.TMP_WORKSPACE_FILES
-
-    with open(base_path / cw.BOUNDING_BOX_FILE_NAME, "r") as f:
-        bounding_box_dict = yaml.safe_load(f)
-
-    bounding_box = BoundingBox(**bounding_box_dict)
-
-    with patch.object(
-        cw,
-        "get_base_path",
-        return_value=base_path,
-    ):
-        file_response = find_character(
-            ad_id=ad_id,
-            bounding_box=bounding_box,
-        )
-        print(file_response)

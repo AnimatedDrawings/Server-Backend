@@ -7,13 +7,12 @@ def get_zero_client(
     host: str = "animated_drawings",
     port: int = 8001,
     timeout: int = 2000,
-):
-    zero_client = AsyncZeroClient(
+) -> AsyncZeroClient:
+    return AsyncZeroClient(
         host,
         port,
         default_timeout=timeout,
     )
-    return zero_client
 
 
 async def render_start_async(
