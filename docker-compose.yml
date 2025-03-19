@@ -9,7 +9,7 @@ services:
     ports:
       - 8080:8080
       - 8081:8081
-    restart: always
+    # restart: always
     # deploy:
     #   resources:
     #     limits:
@@ -19,8 +19,6 @@ services:
       ad_server: {}
 
   animated_drawings:
-    depends_on:
-      - torchserve
     build:
       context: ./animated_drawings
       dockerfile: ./animated_drawings.Dockerfile
@@ -36,18 +34,18 @@ services:
       - ./animated_drawings/AnimatedDrawings:/${ROOT_DIR}/AnimatedDrawings
       # - ./workspace:/${ROOT_DIR}/${ANIMATED_DRAWINGS_WORKSPACE_DIR}
       - ./workspace:/${ROOT_DIR}/AnimatedDrawings/${ANIMATED_DRAWINGS_WORKSPACE_DIR}
-    restart: always
-    deploy:
-      resources:
-        limits:
-          cpus: 0.5
+    # restart: always
+    # deploy:
+    #   resources:
+    #     limits:
+    #       cpus: 0.5
           # memory: 64g
     networks:
       ad_server: {}
 
   ad_fast_api:
-    depends_on:
-      - animated_drawings
+    # depends_on:
+    #   - animated_drawings
     build:
       context: ./ad_fast_api
       dockerfile: ./ad_fast_api.Dockerfile
@@ -60,11 +58,11 @@ services:
     volumes:
       - ./ad_fast_api:/${ROOT_DIR}/ad_fast_api
       - ./workspace/files:/${ROOT_DIR}/ad_fast_api/ad_fast_api/workspace/files
-    restart: always
-    deploy:
-      resources:
-        limits:
-          cpus: 0.5
+    # restart: always
+    # deploy:
+    #   resources:
+    #     limits:
+    #       cpus: 0.5
           # memory: 64g
     networks:
       ad_server: {}

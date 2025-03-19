@@ -1,4 +1,3 @@
-import uvicorn
 from fastapi import FastAPI
 
 from ad_fast_api.domain.upload_drawing.sources import upload_drawing_router
@@ -30,11 +29,20 @@ def ping_animated_drawings(test_param: int):
     )
 
     respone = get_zero_client().call("ping", test_param)
-
     return {"ping_animated_drawings": respone}
 
 
+@app.get("/ping_torchserve")
+def ping_torchserve():
+    from httpx import Client
+
+    with Client() as client:
+        response = client.get("http://torchserve:8080/ping")
+    return {"ping_torchserve": response.json()}
+
+
 if __name__ == "__main__":
+    import uvicorn
     from ad_fast_api.snippets.sources.ad_env import get_ad_env
 
     internal_port = get_ad_env().internal_port

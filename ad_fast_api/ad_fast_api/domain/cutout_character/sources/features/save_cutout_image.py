@@ -1,5 +1,4 @@
 import cv2
-from typing import Tuple
 from cv2.typing import MatLike
 from pathlib import Path
 from fastapi import UploadFile
