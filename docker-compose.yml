@@ -1,14 +1,14 @@
 services:
   torchserve:
     build:
-      context: ./animated_drawings/AnimatedDrawings/torchserve/
-      dockerfile: Dockerfile
-    # expose:
-    #   - 8080
-    #   - 8081
-    ports:
-      - 8080:8080
-      - 8081:8081
+      context: ./ad_fast_api/torchserve
+      dockerfile: ./torchserve.Dockerfile
+    expose:
+      - 8080
+      - 8081
+    # ports:
+    #   - 8080:8080
+    #   - 8081:8081
     # restart: always
     # deploy:
     #   resources:
@@ -20,22 +20,19 @@ services:
 
   animated_drawings:
     build:
-      context: ./animated_drawings
+      context: ./ad_fast_api/animated_drawings
       dockerfile: ./animated_drawings.Dockerfile
       args:
         WORK_DIR: ${ROOT_DIR}
         INTERNAL_PORT: ${ANIMATED_DRAWINGS_INTERNAL_PORT}
         ANIMATED_DRAWINGS_WORKSPACE_DIR: ${ANIMATED_DRAWINGS_WORKSPACE_DIR}
-    # expose:
-    #   - ${ANIMATED_DRAWINGS_INTERNAL_PORT}
-    ports:
-    - ${ANIMATED_DRAWINGS_INTERNAL_PORT}:${ANIMATED_DRAWINGS_INTERNAL_PORT}
+    expose:
+      - ${ANIMATED_DRAWINGS_INTERNAL_PORT}
     volumes:
-      - ./animated_drawings/AnimatedDrawings:/${ROOT_DIR}/AnimatedDrawings
-      # - ./workspace:/${ROOT_DIR}/${ANIMATED_DRAWINGS_WORKSPACE_DIR}
-      - ./workspace:/${ROOT_DIR}/AnimatedDrawings/${ANIMATED_DRAWINGS_WORKSPACE_DIR}
+      - ./ad_fast_api/ad_fast_api/workspace/files:/${ROOT_DIR}/${ANIMATED_DRAWINGS_WORKSPACE_DIR}/files
+      - ./ad_fast_api/ad_fast_api/workspace/config:/${ROOT_DIR}/${ANIMATED_DRAWINGS_WORKSPACE_DIR}/config
     # restart: always
-    # deploy:
+    # deploy: 
     #   resources:
     #     limits:
     #       cpus: 0.5
@@ -44,8 +41,6 @@ services:
       ad_server: {}
 
   ad_fast_api:
-    # depends_on:
-    #   - animated_drawings
     build:
       context: ./ad_fast_api
       dockerfile: ./ad_fast_api.Dockerfile
@@ -56,8 +51,7 @@ services:
     ports:
       - ${AD_FAST_API_EXTERNAL_PORT}:${AD_FAST_API_INTERNAL_PORT}
     volumes:
-      - ./ad_fast_api:/${ROOT_DIR}/ad_fast_api
-      - ./workspace/files:/${ROOT_DIR}/ad_fast_api/ad_fast_api/workspace/files
+      - ./ad_fast_api/ad_fast_api:/${ROOT_DIR}/ad_fast_api
     # restart: always
     # deploy:
     #   resources:
