@@ -86,8 +86,8 @@ def prepare_make_animation(
 
 
 async def image_to_animation_async(
-    animated_drawings_mvc_cfg_path: Path,
     base_path: Path,
+    animated_drawings_mvc_cfg_path: Path,
     relative_video_file_path: Path,
 ) -> FileResponse:
     await render_start_async(
@@ -103,71 +103,3 @@ async def image_to_animation_async(
         relative_video_file_path=relative_video_file_path,
     )
     return file_response
-
-
-# if __name__ == "__main__":
-
-#     def example1_prepare_make_animation():
-#         from ad_fast_api.workspace.sources import conf_workspace as cw
-#         from pathlib import Path
-#         from unittest.mock import patch
-#         from ad_fast_api.snippets.sources.ad_env import ADEnv
-#         from ad_fast_api.workspace.testings.request_files import (
-#             mock_conf_workspace as mcw,
-#         )
-
-#         ad_id = "result_exmaple1"
-#         animated_drawings_workspace_dir = "workspace"
-
-#         animated_drawings_base_path = (
-#             Path(animated_drawings_workspace_dir)
-#             .joinpath(cw.FILES_DIR_NAME)
-#             .joinpath(ad_id)
-#         )
-#         animated_drawings_mvc_cfg_path = animated_drawings_base_path.joinpath(
-#             cw.MVC_CFG_FILE_NAME
-#         )
-
-#         ad_animation = "dab"
-#         relative_video_file_path = Path(f"video/{ad_animation}.gif")
-
-#         with patch(
-#             "__main__.get_ad_env",
-#             return_value=ADEnv(
-#                 internal_port=8000,
-#                 animated_drawings_workspace_dir=animated_drawings_workspace_dir,
-#             ),
-#         ):
-#             animated_drawings_mvc_cfg_path = prepare_make_animation(
-#                 ad_id=ad_id,
-#                 base_path=mcw.TMP_WORKSPACE_FILES,
-#                 ad_animation=ad_animation,
-#                 relative_video_file_path=relative_video_file_path,
-#             )
-#             return animated_drawings_mvc_cfg_path
-
-#     def example1_image_to_animation_async(animated_drawings_mvc_cfg_path):
-#         import asyncio
-#         from unittest.mock import patch
-#         from ad_fast_api.domain.make_animation.sources.features import (
-#             image_to_animation,
-#         )
-
-#         with patch.object(
-#             image_to_animation,
-#             "get_zero_client",
-#             return_value=image_to_animation.get_zero_client(
-#                 host="localhost",
-#                 timeout=60 * 1000,
-#             ),
-#         ):
-#             asyncio.run(
-#                 render_start_async(
-#                     animated_drawings_mvc_cfg_path=animated_drawings_mvc_cfg_path,
-#                 )
-#             )
-
-#     animated_drawings_mvc_cfg_path = example1_prepare_make_animation()
-#     print(animated_drawings_mvc_cfg_path)
-
-#     example1_image_to_animation_async(animated_drawings_mvc_cfg_path)

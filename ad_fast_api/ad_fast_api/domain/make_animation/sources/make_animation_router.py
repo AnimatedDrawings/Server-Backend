@@ -60,7 +60,9 @@ async def make_animation(
 
     await handle_operation_async(
         image_to_animation_async,
+        base_path=base_path,
         animated_drawings_mvc_cfg_path=animated_drawings_mvc_cfg_path,
+        relative_video_file_path=relative_video_file_path,
         status_code=502,
     )
 

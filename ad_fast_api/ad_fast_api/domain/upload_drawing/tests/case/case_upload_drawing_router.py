@@ -1,5 +1,4 @@
 import shutil
-import asyncio
 from ad_fast_api.domain.upload_drawing.sources.features import detect_character
 from ad_fast_api.domain.upload_drawing.sources.upload_drawing_router import (
     upload_drawing,
@@ -8,7 +7,6 @@ from ad_fast_api.workspace.sources import reqeust_files as rf
 from ad_fast_api.workspace.sources import conf_workspace as cw
 from fastapi import UploadFile
 from io import BytesIO
-from unittest.mock import patch
 
 
 def get_sample1_upload_image():
@@ -50,6 +48,8 @@ async def case_upload_drawing_router():
 
 
 if __name__ == "__main__":
+    import asyncio
+    from unittest.mock import patch
     from ad_fast_api.domain.upload_drawing.sources.features import detect_character
 
     with patch.object(
@@ -58,5 +58,6 @@ if __name__ == "__main__":
         new="http://localhost:8080/predictions/drawn_humanoid_detector",
     ):
         response = asyncio.run(case_upload_drawing_router())
-        print(response)
-        remove_workspace_files(ad_id=response.ad_id)
+
+    print(response)
+    remove_workspace_files(ad_id=response.ad_id)

@@ -3,3 +3,4 @@
 2025-03-11 14:57:28,129 - log.txt - CRITICAL - Failed to get skeletons, please check if the 'docker_torchserve' is running and healthy, resp: [Errno -2] Name or service not known
 2025-03-11 17:54:15,245 - log.txt - CRITICAL - Failed to get skeletons, please check if the 'docker_torchserve' is running and healthy, resp: [Errno 111] Connection refused
 2025-03-11 17:55:30,606 - log.txt - CRITICAL - Failed to get skeletons, please check if the 'docker_torchserve' is running and healthy, resp: timed out
+2025-03-20 10:55:43,079 - log.txt - CRITICAL - Failed to get skeletons, please check if the 'docker_torchserve' is running and healthy, resp: [Errno -2] Name or service not known

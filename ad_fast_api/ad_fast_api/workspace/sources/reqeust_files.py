@@ -11,4 +11,5 @@ GARLIC_DIR_PATH = REQUEST_FILES_DIR_PATH.joinpath(GARLIC_AD_ID)
 BOUNDING_BOX_FILE_NAME = "bounding_box.yaml"
 UPLOAD_IMAGE_FILE_NAME = "upload_image.png"
 CROPPED_IMAGE_FILE_NAME = "cropped_image.png"
+CHAR_CFG_YAML_FILE_NAME = "char_cfg.yaml"
 CUTOUT_CHARACTER_IMAGE_FILE_NAME = "cutout_character_image.png"
