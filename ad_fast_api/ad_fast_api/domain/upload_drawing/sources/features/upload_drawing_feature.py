@@ -1,4 +1,3 @@
-from operator import imod
 from fastapi import UploadFile
 from ad_fast_api.domain.upload_drawing.sources.errors import (
     upload_drawing_400_status as ud4s,

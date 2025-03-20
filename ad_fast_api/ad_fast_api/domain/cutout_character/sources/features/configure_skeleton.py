@@ -62,32 +62,6 @@ async def get_pose_result_async(
         return pose_results
 
 
-def get_pose_result(
-    cropped_image: MatLike,
-    logger: Logger,
-    url: Optional[str] = None,
-) -> list[dict] | dict:
-    data_file = {"data": cv2.imencode(".png", cropped_image)[1].tobytes()}
-    with httpx.Client(verify=False) as client:
-        try:
-            resp = client.post(
-                url or GET_SKELETON_TORCHSERVE_URL,
-                files=data_file,
-            )
-        except Exception as e:
-            msg = cc5s.GET_SKELETON_TORCHSERVE_ERROR.format(resp=str(e))
-            logger.critical(msg)
-            raise Exception(msg)
-
-        if resp is None or resp.status_code >= 300:
-            msg = cc5s.GET_SKELETON_TORCHSERVE_ERROR.format(resp=resp)
-            logger.critical(msg)
-            raise Exception(msg)
-
-        pose_results = json.loads(resp.content)
-        return pose_results
-
-
 def check_pose_results(
     pose_results: list[dict] | dict,
     logger: Logger,

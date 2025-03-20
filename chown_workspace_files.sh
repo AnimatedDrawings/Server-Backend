@@ -1,1 +1,1 @@
-sudo chown -R chmini:users workspace/files/
+sudo chown -R chmini:users ./
