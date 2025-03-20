@@ -31,17 +31,6 @@ def render_start(mvc_cfg_file_path: str) -> dict:
         return {"status": "fail", "message": str(e)}
 
 
-"""
-rpc_server > render_start called with argument: workspace/files/result_exmaple1/mvc_cfg.yaml
-config > Using user-specified mvc config file located at /app/AnimatedDrawings/workspace/files/result_exmaple1/mvc_cfg.yaml
-
-
-rpc_server > render_start called, argument: workspace/files/result_exmaple1/mvc_cfg.yaml
-config > Using user-specified mvc config file located at /app/AnimatedDrawings/animated_drawings/app/workspace/files/result_exmaple1/mvc_cfg.yaml
-rpc_server > render_start failed: [Errno 2] No such file or directory: '/app/AnimatedDrawings/animated_drawings/app/workspace/files/result_exmaple1/mvc_cfg.yaml'
-"""
-
-
 if __name__ == "__main__":
     logging.basicConfig(
         level=logging.INFO, format="%(asctime)s %(levelname)s: %(message)s"

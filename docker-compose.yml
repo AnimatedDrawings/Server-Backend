@@ -3,13 +3,15 @@ services:
     build:
       context: ./ad_fast_api/torchserve
       dockerfile: ./torchserve.Dockerfile
-    # expose:
-    #   - 8080
-    #   - 8081
-    ports:
-      - 8080:8080
-      - 8081:8081
-    # restart: always
+    restart: always
+    expose:
+      - 8080
+      - 8081
+    # use ports only case test or locust test
+    # ports:
+    #   - 8080:8080
+    #   - 8081:8081
+    # you can use limit system resources
     # deploy:
     #   resources:
     #     limits:
@@ -26,19 +28,21 @@ services:
         WORK_DIR: ${ROOT_DIR}
         INTERNAL_PORT: ${ANIMATED_DRAWINGS_INTERNAL_PORT}
         ANIMATED_DRAWINGS_WORKSPACE_DIR: ${ANIMATED_DRAWINGS_WORKSPACE_DIR}
-    # expose:
-    #   - ${ANIMATED_DRAWINGS_INTERNAL_PORT}
-    ports:
-      - ${ANIMATED_DRAWINGS_INTERNAL_PORT}:${ANIMATED_DRAWINGS_INTERNAL_PORT}
     volumes:
       - ./ad_fast_api/ad_fast_api/workspace/files:/${ROOT_DIR}/${ANIMATED_DRAWINGS_WORKSPACE_DIR}/files
       - ./ad_fast_api/ad_fast_api/workspace/config:/${ROOT_DIR}/${ANIMATED_DRAWINGS_WORKSPACE_DIR}/config
-    # restart: always
+    restart: always
+    expose:
+      - ${ANIMATED_DRAWINGS_INTERNAL_PORT}
+    # use ports only case test or locust test
+    # ports:
+    #   - ${ANIMATED_DRAWINGS_INTERNAL_PORT}:${ANIMATED_DRAWINGS_INTERNAL_PORT}
+    # you can use limit system resources
     # deploy: 
     #   resources:
     #     limits:
     #       cpus: 0.5
-          # memory: 64g
+    #       memory: 64g
     networks:
       ad_server: {}
 
@@ -50,16 +54,17 @@ services:
         WORK_DIR: ${ROOT_DIR}
         INTERNAL_PORT: ${AD_FAST_API_INTERNAL_PORT}
         ANIMATED_DRAWINGS_WORKSPACE_DIR: ${ANIMATED_DRAWINGS_WORKSPACE_DIR}
+    restart: always
     ports:
       - ${AD_FAST_API_EXTERNAL_PORT}:${AD_FAST_API_INTERNAL_PORT}
     volumes:
       - ./ad_fast_api/ad_fast_api:/${ROOT_DIR}/ad_fast_api
-    # restart: always
+    # you can use limit system resources
     # deploy:
     #   resources:
     #     limits:
     #       cpus: 0.5
-          # memory: 64g
+    #       memory: 64g
     networks:
       ad_server: {}
 
