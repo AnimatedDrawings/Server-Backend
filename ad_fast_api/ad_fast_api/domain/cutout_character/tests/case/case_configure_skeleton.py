@@ -4,7 +4,6 @@ from ad_fast_api.snippets.sources.ad_logger import setup_logger
 from ad_fast_api.domain.cutout_character.sources.features import configure_skeleton
 from ad_fast_api.domain.cutout_character.testings.mock_configure_skeleton import (
     mock_pose_results,
-    mock_kpts,
 )
 
 
@@ -17,7 +16,7 @@ async def case_get_pose_result_async():
         logger=logger,
     )
 
-    url = "http://localhost:8080/predictions/drawn_humanoid_pose_estimator"
+    url = "http://localhost:10000/predictions/drawn_humanoid_pose_estimator"
     response = await configure_skeleton.get_pose_result_async(
         cropped_image=cropped_image,
         logger=logger,

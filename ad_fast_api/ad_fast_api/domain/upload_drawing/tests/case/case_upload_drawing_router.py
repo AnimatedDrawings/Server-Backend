@@ -4,7 +4,7 @@ from ad_fast_api.domain.upload_drawing.sources.upload_drawing_router import (
     upload_drawing,
 )
 from ad_fast_api.workspace.sources import reqeust_files as rf
-from ad_fast_api.workspace.sources import conf_workspace as cw
+from ad_fast_api.snippets.sources.ad_case_test_helper import remove_workspace
 from fastapi import UploadFile
 from io import BytesIO
 
@@ -19,11 +19,6 @@ def get_sample1_upload_image():
 
     with open(sample1_image_path, "rb") as f:
         return f.read()
-
-
-def remove_workspace_files(ad_id: str):
-    tmp_base_path = cw.get_base_path(ad_id=ad_id)
-    shutil.rmtree(tmp_base_path)
 
 
 def create_mock_upload_file():
@@ -60,4 +55,4 @@ if __name__ == "__main__":
         response = asyncio.run(case_upload_drawing_router())
 
     print(response)
-    remove_workspace_files(ad_id=response.ad_id)
+    remove_workspace(ad_id=response.ad_id)

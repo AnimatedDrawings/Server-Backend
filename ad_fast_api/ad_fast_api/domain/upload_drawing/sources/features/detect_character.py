@@ -14,7 +14,7 @@ from ad_fast_api.workspace.sources import conf_workspace as cw
 
 
 DETECT_CHARACTER_TORCHSERVE_URL = (
-    "http://torchserve:8080/predictions/drawn_humanoid_detector"
+    "http://ad_torchserve:8080/predictions/drawn_humanoid_detector"
 )
 
 

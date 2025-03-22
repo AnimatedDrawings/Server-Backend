@@ -1,17 +1,20 @@
-from locust import HttpUser, task
+from locust import HttpUser, task, between
 import gevent
 from ad_fast_api.domain.cutout_character.tests.case import (
     case_cutout_character_router as cccr,
 )
 from ad_fast_api.workspace.sources import reqeust_files as rf
+from ad_fast_api.snippets.sources.ad_case_test_helper import (
+    init_workspace,
+    remove_workspace,
+)
 
 
 class CutoutCharacterUser(HttpUser):
-    def on_start(self):
-        # locust 유저가 시작될 때 샘플 이미지를 한 번 읽어 메모리에 저장합니다.
-        ad_id = rf.EXAMPLE1_AD_ID
-        self.params = {"ad_id": ad_id}
+    wait_time = between(2, 4)
+    host = "http://localhost:2010"
 
+    def on_start(self):
         cutout_character_image = cccr.get_sample1_cutout_character_image()
         self.files = {
             "file": (
@@ -21,54 +24,25 @@ class CutoutCharacterUser(HttpUser):
             )
         }
 
+    def make_params(self, ad_id: str):
+        return {"ad_id": ad_id}
+
     @task
     def cutout_character(self):
+        example_name = rf.EXAMPLE1_AD_ID
+        ad_id = init_workspace(example_name=example_name)
+        params = self.make_params(ad_id=ad_id)
+
         response = self.client.post(
             "/cutout_character",
-            params=self.params,
+            params=params,
             files=self.files,
         )
-        print(response.json())
-        gevent.sleep(5)
+
+        remove_workspace(ad_id=ad_id)
+        gevent.sleep(3)
 
 
 # sudo $(poetry run which python) locust_cutout_character.py
-# sudo $(which locust) -f locust_cutout_character.py --host http://localhost:2010
-#
-
-
-"""
-[2025-03-20 11:09:15,877] chmini-server/ERROR/locust.user.task: Expecting value: line 1 column 1 (char 0)
-Traceback (most recent call last):
-  File "/opt/stacks/ad-server-dev/ad_fast_api/.venv/lib/python3.13/site-packages/requests/models.py", line 974, in json
-    return complexjson.loads(self.text, **kwargs)
-           ~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^
-  File "/home/chmini/.pyenv/versions/3.13.2/lib/python3.13/json/__init__.py", line 346, in loads
-    return _default_decoder.decode(s)
-           ~~~~~~~~~~~~~~~~~~~~~~~^^^
-  File "/home/chmini/.pyenv/versions/3.13.2/lib/python3.13/json/decoder.py", line 345, in decode
-    obj, end = self.raw_decode(s, idx=_w(s, 0).end())
-               ~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^
-  File "/home/chmini/.pyenv/versions/3.13.2/lib/python3.13/json/decoder.py", line 363, in raw_decode
-    raise JSONDecodeError("Expecting value", s, err.value) from None
-json.decoder.JSONDecodeError: Expecting value: line 1 column 1 (char 0)
-
-During handling of the above exception, another exception occurred:
-
-Traceback (most recent call last):
-  File "/opt/stacks/ad-server-dev/ad_fast_api/.venv/lib/python3.13/site-packages/locust/user/task.py", line 340, in run
-    self.execute_next_task()
-    ~~~~~~~~~~~~~~~~~~~~~~^^
-  File "/opt/stacks/ad-server-dev/ad_fast_api/.venv/lib/python3.13/site-packages/locust/user/task.py", line 373, in execute_next_task
-    self.execute_task(self._task_queue.popleft())
-    ~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-  File "/opt/stacks/ad-server-dev/ad_fast_api/.venv/lib/python3.13/site-packages/locust/user/task.py", line 490, in execute_task
-    task(self.user)
-    ~~~~^^^^^^^^^^^
-  File "/opt/stacks/ad-server-dev/ad_fast_api/ad_fast_api/locust/locust_cutout_character.py", line 31, in cutout_character
-    print(response.json())
-          ~~~~~~~~~~~~~^^
-  File "/opt/stacks/ad-server-dev/ad_fast_api/.venv/lib/python3.13/site-packages/requests/models.py", line 978, in json
-    raise RequestsJSONDecodeError(e.msg, e.doc, e.pos)
-requests.exceptions.JSONDecodeError: Expecting value: line 1 column 1 (char 0)
-"""
+# sudo $(which locust) -f locust_cutout_character.py
+# locust -f locust_cutout_character.py

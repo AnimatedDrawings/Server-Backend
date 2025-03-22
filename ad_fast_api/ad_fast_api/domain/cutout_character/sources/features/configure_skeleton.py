@@ -15,7 +15,7 @@ from ad_fast_api.snippets.sources.save_dict import dict_to_file
 
 
 GET_SKELETON_TORCHSERVE_URL = (
-    "http://torchserve:8080/predictions/drawn_humanoid_pose_estimator"
+    "http://ad_torchserve:8080/predictions/drawn_humanoid_pose_estimator"
 )
 
 

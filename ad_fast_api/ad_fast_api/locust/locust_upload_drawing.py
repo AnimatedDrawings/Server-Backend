@@ -4,6 +4,9 @@ from ad_fast_api.domain.upload_drawing.tests.case import (
     case_upload_drawing_router as cudr,
 )
 from ad_fast_api.workspace.sources import reqeust_files as rf
+from ad_fast_api.snippets.sources.ad_case_test_helper import (
+    remove_workspace,
+)
 
 
 class UploadDrawingUser(HttpUser):
@@ -25,7 +28,7 @@ class UploadDrawingUser(HttpUser):
             files=self.files,
         )
         ad_id = response.json()["ad_id"]
-        cudr.remove_workspace_files(ad_id=ad_id)
+        remove_workspace(ad_id=ad_id)
         gevent.sleep(5)
 
 
