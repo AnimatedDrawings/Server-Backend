@@ -60,7 +60,8 @@ async def detect_character_from_origin_async(
     img_b = cv2.imencode(".png", img)[1].tobytes()
     request_data = {"data": img_b}
 
-    async with httpx.AsyncClient(verify=False) as client:
+    timeout = httpx.Timeout(25)
+    async with httpx.AsyncClient(verify=False, timeout=timeout) as client:
         try:
             resp = await client.post(
                 url or DETECT_CHARACTER_TORCHSERVE_URL,

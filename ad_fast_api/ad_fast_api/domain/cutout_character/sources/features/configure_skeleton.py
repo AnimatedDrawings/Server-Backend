@@ -41,7 +41,7 @@ async def get_pose_result_async(
     img_b = cv2.imencode(".png", cropped_image)[1].tobytes()
     request_data = {"data": img_b}
 
-    timeout = httpx.Timeout(60)
+    timeout = httpx.Timeout(25)
     async with httpx.AsyncClient(verify=False, timeout=timeout) as client:
         try:
             resp = await client.post(

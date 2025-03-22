@@ -60,7 +60,7 @@ class ConfigureSkeletonUser(HttpUser):
             response = self.client.post(
                 "/predictions/drawn_humanoid_pose_estimator",
                 files=self.files,
-                timeout=30,  # 클라이언트 타임아웃 설정
+                timeout=25,  # 클라이언트 타임아웃 설정
             )
             self.check_response(response)
         except Exception as e:
