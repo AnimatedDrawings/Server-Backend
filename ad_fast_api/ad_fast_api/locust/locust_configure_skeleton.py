@@ -70,4 +70,4 @@ class ConfigureSkeletonUser(HttpUser):
         gevent.sleep(3)
 
 
-# locust -f locust_configure_skeleton.py
+# locust --processes -1 -f locust_configure_skeleton.py

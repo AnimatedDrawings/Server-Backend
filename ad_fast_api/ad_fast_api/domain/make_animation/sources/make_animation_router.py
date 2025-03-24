@@ -1,5 +1,7 @@
-from fastapi import APIRouter
+import asyncio
+from fastapi import APIRouter, WebSocket, WebSocketDisconnect, FastAPI
 from fastapi.responses import FileResponse
+from fastapi.openapi.utils import get_openapi
 from ad_fast_api.snippets.sources.ad_http_exception import (
     handle_operation,
     handle_operation_async,
@@ -14,6 +16,7 @@ from ad_fast_api.workspace.sources.conf_workspace import get_base_path
 from ad_fast_api.domain.make_animation.sources.errors.make_animation_500_status import (
     NOT_FOUND_ANIMATION_FILE,
 )
+from ad_fast_api.snippets.sources import ad_websocket
 
 
 router = APIRouter()
@@ -75,3 +78,21 @@ async def make_animation(
         relative_video_file_path=relative_video_file_path,
     )
     return file_response
+
+
+def make_animation_openapi(app: FastAPI):
+    return ad_websocket.custom_openapi(
+        app=app,
+        paths="/test/make_animation",
+        method="post",
+        summary="WebSocket /test/make_animation Endpoint",
+        description=(
+            "이 엔드포인트는 웹소켓 연결을 위한 엔드포인트입니다. 실제 연결은 웹소켓 프로토콜을 통해 이루어지며, "
+            "HTTP GET 라우터는 단지 문서화 목적으로만 포함되어 있습니다."
+        ),
+        responses={
+            "101": {  # 101 Switching Protocols
+                "description": "웹소켓 연결 시작 (Switching Protocols)"
+            }
+        },
+    )

@@ -17,6 +17,13 @@ app.include_router(configure_character_joints_router.router)
 app.include_router(make_animation_router.router)
 
 
+def custom_openapi():
+    return make_animation_router.make_animation_openapi(app)
+
+
+app.openapi = custom_openapi
+
+
 @app.get("/ping")
 def ping():
     return {"ad_fast_api test ping success!!"}

@@ -25,4 +25,5 @@ class ConfigureCharacterJointsUser(HttpUser):
         gevent.sleep(1)
 
 
-# locust -f locust_configure_character_joints.py --host http://localhost:2010
+# sudo $(which locust) --processes -1 -f locust_make_animation.py
+# locust --processes -1 -f locust_configure_character_joints.py --host http://localhost:2010

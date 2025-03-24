@@ -33,7 +33,7 @@ class MakeAnimationUser(HttpUser):
         response = self.client.post(
             "/make_animation",
             params=params,
-            timeout=90,
+            timeout=60,
         )
 
         remove_workspace(ad_id=ad_id)
@@ -41,5 +41,5 @@ class MakeAnimationUser(HttpUser):
 
 
 # sudo $(poetry run which python) locust_make_animation.py
-# sudo $(which locust) -f locust_make_animation.py
+# sudo $(which locust) --processes 3 -f locust_make_animation.py
 # locust -f locust_make_animation.py

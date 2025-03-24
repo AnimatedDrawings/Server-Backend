@@ -13,16 +13,15 @@ def remove_result_video_files(ad_id: str):
 
 
 async def case_make_animation_router(ad_id: str):
-    ad_animation = "dab"
+    async def make_animation_async():
+        ad_animation = "dab"
 
-    response = await make_animation(
-        ad_id=ad_id,
-        ad_animation=ad_animation,
-    )
-    return response
+        response = await make_animation(
+            ad_id=ad_id,
+            ad_animation=ad_animation,
+        )
+        return response
 
-
-if __name__ == "__main__":
     import asyncio
     from unittest.mock import patch
     from ad_fast_api.domain.make_animation.sources.features import image_to_animation
@@ -49,7 +48,11 @@ if __name__ == "__main__":
         new=mock_ad_env,
     ):
         asyncio.run(
-            case_make_animation_router(ad_id=ad_id),
+            make_animation_async(),
         )
 
     remove_result_video_files(ad_id=ad_id)
+
+
+if __name__ == "__main__":
+    pass
