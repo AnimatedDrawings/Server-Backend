@@ -1,4 +1,5 @@
 import asyncio
+from typing import Callable
 from fastapi import FastAPI, WebSocket, WebSocketDisconnect
 from fastapi.openapi.utils import get_openapi
 from logging import Logger
@@ -59,7 +60,13 @@ async def retry_websocket(
                 break
 
 
-async def websocket_async(websocket: WebSocket, logger: Logger):
+async def websocket_async(
+    websocket: WebSocket,
+    logger: Logger,
+    operation: Callable,
+    *args,
+    **kwargs,
+):
     """
     웹소켓 연결 수락 후, 주기적으로 "ping" 메시지를 전송하고 "pong" 응답을 대기하며
     연결 상태를 유지하는 메소드입니다.
@@ -80,9 +87,11 @@ async def websocket_async(websocket: WebSocket, logger: Logger):
                 logger.error("Ping 메시지 전송 중 오류 발생: %s", send_err)
                 break
 
-            # "pong" 응답 확인 (최대 3회 재시도)
             try:
+                # "pong" 응답 확인 (최대 3회 재시도)
                 await retry_websocket(websocket, logger, max_retries=3)
+                # 외부 작업 실행
+                await operation(*args, **kwargs)
             except Exception as retry_err:
                 logger.error("pong 응답 처리 중 오류 발생: %s", retry_err)
                 break
@@ -94,6 +103,106 @@ async def websocket_async(websocket: WebSocket, logger: Logger):
     except Exception as e:
         logger.exception("웹소켓 유지 관리 중 예기치 않은 오류 발생: %s", e)
         await websocket.close(code=1011, reason="서버 내부 오류")
+
+
+# async def websocket_async(websocket: WebSocket, logger: Logger, external_process):
+#     """
+#     웹소켓 연결 수락 후, 주기적으로 "ping" 메시지를 전송하고 "pong" 응답을 대기하며
+#     연결 상태를 유지하는 메소드입니다.
+#     매 5초마다 "ping" 메시지를 전송하며, 최대 3번의 재시도를 통해 "pong" 응답을 확인합니다.
+#     외부 작업 프로세스(external_process)가 전달되면, 연결 종료 시 해당 프로세스를 종료합니다.
+#     """
+#     try:
+#         await websocket.accept()
+#         logger.info("웹소켓 연결이 성공적으로 수락되었습니다.")
+#     except Exception as e:
+#         logger.exception("웹소켓 연결 수락 중 오류 발생: %s", e)
+#         external_process.terminate()
+#         return
+
+#     try:
+#         while True:
+#             try:
+#                 await websocket.send_json({"type": "ping"})
+#             except Exception as send_err:
+#                 logger.error("Ping 메시지 전송 중 오류 발생: %s", send_err)
+#                 external_process.terminate()
+#                 return
+
+#             try:
+#                 await retry_websocket(websocket, logger, max_retries=3)
+#             except Exception as retry_err:
+#                 logger.error("pong 응답 처리 중 오류 발생: %s", retry_err)
+#                 external_process.terminate()
+#                 return
+
+#             # heartbeat 간격: 5초
+#             await asyncio.sleep(5)
+#     except WebSocketDisconnect as e:
+#         logger.info("클라이언트와의 웹소켓 연결이 종료되었습니다: %s", e)
+#         external_process.terminate()
+#         return
+#     except Exception as e:
+#         logger.exception("웹소켓 유지 관리 중 예기치 않은 오류 발생: %s", e)
+#         await websocket.close(code=1011, reason="서버 내부 오류")
+#         external_process.terminate()
+#         return
+
+
+# async def websocket_async(websocket: WebSocket, logger: Logger, external_process):
+#     """
+#     웹소켓 연결 수락 후, 주기적으로 "ping" 메시지를 전송하고 "pong" 응답을 대기하며
+#     연결 상태를 유지하는 메소드입니다.
+#     매 5초마다 "ping" 메시지를 전송하며, 최대 3번의 재시도를 통해 "pong" 응답을 확인합니다.
+#     외부 작업 프로세스(external_process)가 전달되며, 해당 프로세스가 작업 완료되면 소켓을 정상 종료합니다.
+#     """
+#     try:
+#         await websocket.accept()
+#         logger.info("웹소켓 연결이 성공적으로 수락되었습니다.")
+#     except Exception as e:
+#         logger.exception("웹소켓 연결 수락 중 오류 발생: %s", e)
+#         external_process.terminate()
+#         return
+
+#     try:
+#         while True:
+#             # 외부 프로세스가 작업을 완료했는지 체크
+#             if hasattr(external_process, "is_alive"):
+#                 if not external_process.is_alive():
+#                     logger.info("외부 프로세스 작업 완료. 소켓을 정상적으로 종료합니다.")
+#                     await websocket.close(code=1000, reason="외부 프로세스 작업 완료")
+#                     return
+#             else:
+#                 if external_process.poll() is not None:
+#                     logger.info("외부 프로세스 작업 완료. 소켓을 정상적으로 종료합니다.")
+#                     await websocket.close(code=1000, reason="외부 프로세스 작업 완료")
+#                     return
+
+#             try:
+#                 await websocket.send_json({"type": "ping"})
+#             except Exception as send_err:
+#                 logger.error("Ping 메시지 전송 중 오류 발생: %s", send_err)
+#                 external_process.terminate()
+#                 return
+
+#             try:
+#                 await retry_websocket(websocket, logger, max_retries=3)
+#             except Exception as retry_err:
+#                 logger.error("pong 응답 처리 중 오류 발생: %s", retry_err)
+#                 external_process.terminate()
+#                 return
+
+#             # heartbeat 간격: 5초
+#             await asyncio.sleep(5)
+#     except WebSocketDisconnect as e:
+#         logger.info("클라이언트와의 웹소켓 연결이 종료되었습니다: %s", e)
+#         external_process.terminate()
+#         return
+#     except Exception as e:
+#         logger.exception("웹소켓 유지 관리 중 예기치 않은 오류 발생: %s", e)
+#         await websocket.close(code=1011, reason="서버 내부 오류")
+#         external_process.terminate()
+#         return
 
 
 def custom_openapi(
