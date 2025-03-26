@@ -1,208 +1,103 @@
 import asyncio
-from typing import Callable
 from fastapi import FastAPI, WebSocket, WebSocketDisconnect
 from fastapi.openapi.utils import get_openapi
 from logging import Logger
 
 
-async def get_pong_response(
-    websocket: WebSocket,
-    timeout: int = 3,
-):
-    response = await asyncio.wait_for(
-        websocket.receive_json(),
-        timeout=timeout,
-    )
-
-    return response
+MAX_RETRIES = 3
+TIMEOUT = 3
 
 
-def is_valid_response(response: dict):
-    return response.get("type") == "pong"
-
-
-async def retry_websocket(
+# 웹소켓 연결
+async def accept_websocket(
     websocket: WebSocket,
     logger: Logger,
-    max_retries: int = 3,
+):
+    try:
+        await websocket.accept()
+        logger.info("The websocket connection has been successfully accepted.")
+    except Exception as e:
+        msg = "An error occurred while accepting the websocket connection"
+        logger.error(f"{msg}: {e}")
+        await websocket.close()
+        raise Exception(msg)
+
+
+async def retry_ping(
+    websocket: WebSocket,
+    logger: Logger,
+):
+    retry_count = 0
+
+    while retry_count < MAX_RETRIES:
+        try:
+            await asyncio.wait_for(
+                websocket.send_json(
+                    {
+                        "type": "ping",
+                        "message": "",
+                        "data": {},
+                    }
+                ),
+                timeout=TIMEOUT,
+            )
+            return
+        except Exception as e:
+            msg = f"Ping 메시지 전송 실패 (시도 {retry_count}/{MAX_RETRIES}): {e}"
+            logger.error(msg)
+            retry_count += 1
+            await asyncio.sleep(0.3)
+    else:
+        msg = (
+            f"Ping 메시지 전송 최대 재시도 횟수 초과 (시도 {retry_count}/{MAX_RETRIES})"
+        )
+        logger.error(msg)
+        raise WebSocketDisconnect(code=1000, reason=msg)
+
+
+async def retry_pong(
+    websocket: WebSocket,
+    logger: Logger,
+    max_retries: int = MAX_RETRIES,
 ):
     retry_count = 0
 
     while retry_count < max_retries:
         try:
-            response = await get_pong_response(websocket)
-            if not is_valid_response(response):
-                msg = f"유효하지 않은 응답 (시도 {retry_count+1}/{max_retries}) : {response}"
-                logger.error(msg)
+            response = await asyncio.wait_for(
+                websocket.receive_json(),
+                timeout=TIMEOUT,
+            )
 
-                retry_count += 1
-                if max_retries <= retry_count:
-                    await websocket.close(
-                        code=1000,
-                        reason="유효하지 않은 응답 - 최대 재시도 횟수 초과",
-                    )
-                    break
-            else:
-                print("pong 응답:", response)
-                break  # 성공적인 응답을 받았으므로 재시도 루프 종료
-        except asyncio.TimeoutError:
-            # 타임아웃 발생 시, 재시도 횟수를 증가시킵니다.
+            if response.get("type") == "pong":
+                return
+
+            msg = (
+                f"유효하지 않은 응답 (시도 {retry_count+1}/{max_retries}) : {response}"
+            )
+            logger.error(msg)
             retry_count += 1
-            print(f"pong 응답 지연 (시도 {retry_count}/{max_retries})")
+            await asyncio.sleep(0.3)
+        except Exception as e:
+            msg = f"pong 응답 처리 중 오류 발생 (시도 {retry_count+1}/{max_retries}) : {e}"
+            logger.error(msg)
+            retry_count += 1
+            await asyncio.sleep(0.3)
+    else:
+        msg = f"pong 응답 처리 최대 재시도 횟수 초과 (시도 {retry_count}/{max_retries})"
+        logger.error(msg)
+        raise WebSocketDisconnect(code=1000, reason=msg)
 
-            if retry_count >= max_retries:
-                msg = f"최대 재시도 횟수 초과 - 연결 종료 (시도 {retry_count}/{max_retries})"
-                logger.error(msg)
-                await websocket.close(
-                    code=1001,
-                    reason="pong 응답 지연 - 최대 재시도 횟수 초과",
-                )
-                break
 
-
-async def websocket_async(
+async def check_connection(
+    timer: int,
+    period: int,
     websocket: WebSocket,
     logger: Logger,
-    operation: Callable,
-    *args,
-    **kwargs,
 ):
-    """
-    웹소켓 연결 수락 후, 주기적으로 "ping" 메시지를 전송하고 "pong" 응답을 대기하며
-    연결 상태를 유지하는 메소드입니다.
-    매 5초마다 "ping" 메시지를 전송하며, 최대 3번의 재시도를 통해 "pong" 응답을 확인합니다.
-    """
-    try:
-        await websocket.accept()
-        logger.info("웹소켓 연결이 성공적으로 수락되었습니다.")
-    except Exception as e:
-        logger.exception("웹소켓 연결 수락 중 오류 발생: %s", e)
-        return
-
-    try:
-        while True:
-            try:
-                await websocket.send_json({"type": "ping"})
-            except Exception as send_err:
-                logger.error("Ping 메시지 전송 중 오류 발생: %s", send_err)
-                break
-
-            try:
-                # "pong" 응답 확인 (최대 3회 재시도)
-                await retry_websocket(websocket, logger, max_retries=3)
-                # 외부 작업 실행
-                await operation(*args, **kwargs)
-            except Exception as retry_err:
-                logger.error("pong 응답 처리 중 오류 발생: %s", retry_err)
-                break
-
-            # heartbeat 간격: 5초
-            await asyncio.sleep(5)
-    except WebSocketDisconnect as e:
-        logger.info("클라이언트와의 웹소켓 연결이 종료되었습니다: %s", e)
-    except Exception as e:
-        logger.exception("웹소켓 유지 관리 중 예기치 않은 오류 발생: %s", e)
-        await websocket.close(code=1011, reason="서버 내부 오류")
-
-
-# async def websocket_async(websocket: WebSocket, logger: Logger, external_process):
-#     """
-#     웹소켓 연결 수락 후, 주기적으로 "ping" 메시지를 전송하고 "pong" 응답을 대기하며
-#     연결 상태를 유지하는 메소드입니다.
-#     매 5초마다 "ping" 메시지를 전송하며, 최대 3번의 재시도를 통해 "pong" 응답을 확인합니다.
-#     외부 작업 프로세스(external_process)가 전달되면, 연결 종료 시 해당 프로세스를 종료합니다.
-#     """
-#     try:
-#         await websocket.accept()
-#         logger.info("웹소켓 연결이 성공적으로 수락되었습니다.")
-#     except Exception as e:
-#         logger.exception("웹소켓 연결 수락 중 오류 발생: %s", e)
-#         external_process.terminate()
-#         return
-
-#     try:
-#         while True:
-#             try:
-#                 await websocket.send_json({"type": "ping"})
-#             except Exception as send_err:
-#                 logger.error("Ping 메시지 전송 중 오류 발생: %s", send_err)
-#                 external_process.terminate()
-#                 return
-
-#             try:
-#                 await retry_websocket(websocket, logger, max_retries=3)
-#             except Exception as retry_err:
-#                 logger.error("pong 응답 처리 중 오류 발생: %s", retry_err)
-#                 external_process.terminate()
-#                 return
-
-#             # heartbeat 간격: 5초
-#             await asyncio.sleep(5)
-#     except WebSocketDisconnect as e:
-#         logger.info("클라이언트와의 웹소켓 연결이 종료되었습니다: %s", e)
-#         external_process.terminate()
-#         return
-#     except Exception as e:
-#         logger.exception("웹소켓 유지 관리 중 예기치 않은 오류 발생: %s", e)
-#         await websocket.close(code=1011, reason="서버 내부 오류")
-#         external_process.terminate()
-#         return
-
-
-# async def websocket_async(websocket: WebSocket, logger: Logger, external_process):
-#     """
-#     웹소켓 연결 수락 후, 주기적으로 "ping" 메시지를 전송하고 "pong" 응답을 대기하며
-#     연결 상태를 유지하는 메소드입니다.
-#     매 5초마다 "ping" 메시지를 전송하며, 최대 3번의 재시도를 통해 "pong" 응답을 확인합니다.
-#     외부 작업 프로세스(external_process)가 전달되며, 해당 프로세스가 작업 완료되면 소켓을 정상 종료합니다.
-#     """
-#     try:
-#         await websocket.accept()
-#         logger.info("웹소켓 연결이 성공적으로 수락되었습니다.")
-#     except Exception as e:
-#         logger.exception("웹소켓 연결 수락 중 오류 발생: %s", e)
-#         external_process.terminate()
-#         return
-
-#     try:
-#         while True:
-#             # 외부 프로세스가 작업을 완료했는지 체크
-#             if hasattr(external_process, "is_alive"):
-#                 if not external_process.is_alive():
-#                     logger.info("외부 프로세스 작업 완료. 소켓을 정상적으로 종료합니다.")
-#                     await websocket.close(code=1000, reason="외부 프로세스 작업 완료")
-#                     return
-#             else:
-#                 if external_process.poll() is not None:
-#                     logger.info("외부 프로세스 작업 완료. 소켓을 정상적으로 종료합니다.")
-#                     await websocket.close(code=1000, reason="외부 프로세스 작업 완료")
-#                     return
-
-#             try:
-#                 await websocket.send_json({"type": "ping"})
-#             except Exception as send_err:
-#                 logger.error("Ping 메시지 전송 중 오류 발생: %s", send_err)
-#                 external_process.terminate()
-#                 return
-
-#             try:
-#                 await retry_websocket(websocket, logger, max_retries=3)
-#             except Exception as retry_err:
-#                 logger.error("pong 응답 처리 중 오류 발생: %s", retry_err)
-#                 external_process.terminate()
-#                 return
-
-#             # heartbeat 간격: 5초
-#             await asyncio.sleep(5)
-#     except WebSocketDisconnect as e:
-#         logger.info("클라이언트와의 웹소켓 연결이 종료되었습니다: %s", e)
-#         external_process.terminate()
-#         return
-#     except Exception as e:
-#         logger.exception("웹소켓 유지 관리 중 예기치 않은 오류 발생: %s", e)
-#         await websocket.close(code=1011, reason="서버 내부 오류")
-#         external_process.terminate()
-#         return
+    if timer % period == 0:
+        await retry_ping(websocket, logger)
+        await retry_pong(websocket, logger)
 
 
 def custom_openapi(

@@ -32,49 +32,6 @@ def test_get_file_response(tmp_path: Path):
     assert response.media_type == "image/gif"
 
 
-@patch.object(make_animation_feature, "check_available_animation")
-@patch.object(make_animation_feature, "is_video_file_exists")
-def test_check_make_animation_info_success(
-    mock_is_video_file_exists, mock_check_available_animation
-):
-    # 준비
-    base_path = Path("/test/path")
-    ad_animation = "walk"
-    expected_path = Path("/test/path/video.mp4")
-    mock_is_video_file_exists.return_value = expected_path
-
-    # 실행
-    result = make_animation_feature.check_make_animation_info(base_path, ad_animation)
-
-    # 검증
-    mock_check_available_animation.assert_called_once_with(ad_animation=ad_animation)
-    mock_is_video_file_exists.assert_called_once_with(
-        base_path=base_path, ad_animation=ad_animation
-    )
-    assert result == expected_path
-
-
-@patch.object(make_animation_feature, "check_available_animation")
-@patch.object(make_animation_feature, "is_video_file_exists")
-def test_check_make_animation_info_no_video(
-    mock_is_video_file_exists, mock_check_available_animation
-):
-    # 준비
-    base_path = Path("/test/path")
-    ad_animation = "walk"
-    mock_is_video_file_exists.return_value = None
-
-    # 실행
-    result = make_animation_feature.check_make_animation_info(base_path, ad_animation)
-
-    # 검증
-    mock_check_available_animation.assert_called_once_with(ad_animation=ad_animation)
-    mock_is_video_file_exists.assert_called_once_with(
-        base_path=base_path, ad_animation=ad_animation
-    )
-    assert result is None
-
-
 @patch(
     "ad_fast_api.domain.make_animation.sources.features.make_animation_feature.get_ad_env"
 )

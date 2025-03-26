@@ -1,23 +1,31 @@
-import asyncio
-from fastapi import APIRouter, WebSocket, WebSocketDisconnect, FastAPI
+from fastapi import APIRouter, WebSocket, FastAPI
 from fastapi.responses import FileResponse
-from fastapi.openapi.utils import get_openapi
-from ad_fast_api.snippets.sources.ad_http_exception import (
-    handle_operation,
-    handle_operation_async,
-)
 from ad_fast_api.domain.make_animation.sources.features.make_animation_feature import (
-    check_make_animation_info,
     prepare_make_animation,
-    image_to_animation_async,
     get_file_response,
+    check_connection_and_rendering,
+)
+from ad_fast_api.domain.make_animation.sources.features.check_make_animation_info import (
+    check_available_animation,
+    get_video_file_path,
+)
+from ad_fast_api.domain.make_animation.sources.features.image_to_animation import (
+    start_render_async,
 )
 from ad_fast_api.workspace.sources.conf_workspace import get_base_path
+from ad_fast_api.snippets.sources.ad_websocket import (
+    custom_openapi,
+    accept_websocket,
+)
+from ad_fast_api.snippets.sources.ad_logger import setup_logger
 from ad_fast_api.domain.make_animation.sources.errors.make_animation_500_status import (
     NOT_FOUND_ANIMATION_FILE,
 )
-from ad_fast_api.snippets.sources import ad_websocket
-from ad_fast_api.snippets.sources.ad_logger import setup_logger
+from ad_fast_api.domain.make_animation.sources.make_animation_schema import (
+    WebSocketType,
+    create_websocket_message,
+)
+from ad_fast_api.snippets.sources.ad_dictionary import get_value_from_dict
 
 
 router = APIRouter()
@@ -27,80 +35,165 @@ router = APIRouter()
 async def make_animation_websocket(
     websocket: WebSocket,
     ad_id: str,
+    ad_animation: str,
 ):
+    """
+    웹소켓 연결 수락 후 애니메이션 렌더링 시작 요청을 보냅니다.
+    5초마다 ping 메시지와 pong 응답을 주고 받으며, 최대 3번의 재시도를 통해 연결상태를 확인합니다.
+    연결이 중단되면 렌더링 중단을 요청합니다.
+
+    렌더링 완료는 1초마다 확인하며, 렌더링 완료 시 파일 전송을 시작합니다.
+    파일 전송 완료 시 웹소켓 연결을 종료합니다.
+    """
     base_path = get_base_path(ad_id=ad_id)
     logger = setup_logger(base_path=base_path)
-    await ad_websocket.websocket_async(
-        websocket=websocket,
+
+    # 웹소켓 연결
+    try:
+        await accept_websocket(websocket, logger)
+    except Exception as e:
+        return
+
+    # 애니메이션 이름 유효성 검사
+    try:
+        check_available_animation(ad_animation, logger)
+    except Exception as e:
+        await websocket.send_json(
+            create_websocket_message(
+                type=WebSocketType.ERROR,
+                message=str(e),
+            )
+        )
+        await websocket.close()
+        return
+
+    # 애니메이션 파일 존재 여부 확인
+    video_file_path, relative_video_file_path = get_video_file_path(
+        base_path=base_path,
+        ad_animation=ad_animation,
         logger=logger,
-        operation=make_animation_async,
     )
 
-    # await websocket.accept()
-    # await websocket.send_json({"type": "ping"})
-    # await websocket.close()
+    if video_file_path.exists():
+        await websocket.send_json(
+            create_websocket_message(
+                type=WebSocketType.COMPLETE,
+                message="Animation rendering has been completed.",
+                data={
+                    "file_path": str(relative_video_file_path),
+                },
+            )
+        )
+        await websocket.close()
+        return
+
+    # 애니메이션 렌더링 준비
+    animated_drawings_mvc_cfg_path = prepare_make_animation(
+        ad_id=ad_id,
+        base_path=base_path,
+        ad_animation=ad_animation,
+        relative_video_file_path=relative_video_file_path,
+    )
+
+    # 애니메이션 렌더링 시작 요청
+    start_websocket_message = await start_render_async(
+        animated_drawings_mvc_cfg_path=animated_drawings_mvc_cfg_path,
+        logger=logger,
+    )
+    await websocket.send_json(start_websocket_message)
+    start_type = start_websocket_message["type"]
+    if (
+        start_type == WebSocketType.FULL_JOB.value
+        or start_type == WebSocketType.ERROR.value
+    ):
+        await websocket.close()
+        return
+
+    # 렌더링 작업 ID 추출
+    job_id = get_value_from_dict(
+        key_list=["data", "job_id"],
+        from_dict=dict(start_websocket_message),
+    )
+    if job_id is None:
+        logger.error("Rendering job ID not found.")
+        await websocket.send_json(
+            create_websocket_message(
+                type=WebSocketType.ERROR,
+                message="Rendering job ID not found.",
+            )
+        )
+        await websocket.close()
+        return
+
+    # 주기적으로 렌더링 작업 확인
+    try:
+        await check_connection_and_rendering(
+            job_id=job_id,
+            base_path=base_path,
+            relative_video_file_path=relative_video_file_path,
+            websocket=websocket,
+            logger=logger,
+        )
+    except Exception as e:
+        await websocket.send_json(
+            create_websocket_message(
+                type=WebSocketType.ERROR,
+                message=str(e),
+            )
+        )
+        await websocket.close()
+        return
+
+    # 렌더링 완료, 웹소켓 메시지 전송
+    await websocket.send_json(
+        create_websocket_message(
+            type=WebSocketType.COMPLETE,
+            message="Animation rendering has been completed.",
+            data={
+                "file_path": str(relative_video_file_path),
+            },
+        )
+    )
+    await websocket.close()
 
 
-# @router.post(
-#     "/make_animation",
-#     response_class=FileResponse,
-#     responses={
-#         200: {
-#             "content": {"image/gif": {}},
-#             "description": "Animation gif file.",
-#         }
-#     },
-# )
-# async def make_animation(
-#     ad_id: str,
-#     ad_animation: str,
-# ):
-#     base_path = get_base_path(ad_id=ad_id)
+@router.get(
+    "/download_animation",
+    response_class=FileResponse,
+    responses={
+        200: {
+            "content": {"image/gif": {}},
+            "description": "Animation gif file.",
+        }
+    },
+)
+async def download_animation(
+    ad_id: str,
+    ad_animation: str,
+):
+    """
+    애니메이션 파일 다운로드
+    """
+    base_path = get_base_path(ad_id=ad_id)
+    logger = setup_logger(base_path=base_path)
 
-#     is_video_file_exists, relative_video_file_path = handle_operation(
-#         check_make_animation_info,
-#         base_path=base_path,
-#         ad_animation=ad_animation,
-#         status_code=500,
-#     )
+    video_file_path, relative_video_file_path = get_video_file_path(
+        base_path=base_path,
+        ad_animation=ad_animation,
+        logger=logger,
+    )
+    if not video_file_path.exists():
+        raise NOT_FOUND_ANIMATION_FILE
 
-#     if is_video_file_exists:
-#         file_response = get_file_response(
-#             base_path=base_path,
-#             relative_video_file_path=relative_video_file_path,
-#         )
-#         return file_response
-
-#     animated_drawings_mvc_cfg_path = handle_operation(
-#         prepare_make_animation,
-#         ad_id=ad_id,
-#         base_path=base_path,
-#         ad_animation=ad_animation,
-#         relative_video_file_path=relative_video_file_path,
-#         status_code=501,
-#     )
-
-#     await handle_operation_async(
-#         image_to_animation_async,
-#         base_path=base_path,
-#         animated_drawings_mvc_cfg_path=animated_drawings_mvc_cfg_path,
-#         relative_video_file_path=relative_video_file_path,
-#         status_code=502,
-#     )
-
-#     video_file_path = base_path.joinpath(relative_video_file_path)
-#     if not video_file_path.exists():
-#         raise NOT_FOUND_ANIMATION_FILE
-
-#     file_response = get_file_response(
-#         base_path=base_path,
-#         relative_video_file_path=relative_video_file_path,
-#     )
-#     return file_response
+    file_response = get_file_response(
+        base_path=base_path,
+        relative_video_file_path=relative_video_file_path,
+    )
+    return file_response
 
 
 def make_animation_openapi(app: FastAPI):
-    return ad_websocket.custom_openapi(
+    return custom_openapi(
         app=app,
         paths="/test/make_animation",
         method="post",

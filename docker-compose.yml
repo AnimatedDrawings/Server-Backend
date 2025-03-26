@@ -24,8 +24,8 @@ services:
   animated_drawings:
     container_name: animated_drawings
     build:
-      context: ./ad_fast_api/animated_drawings
-      dockerfile: ./animated_drawings.Dockerfile
+      context: ./ad_fast_api/ad_animated_drawings
+      dockerfile: ./ad_animated_drawings.Dockerfile
       args:
         WORK_DIR: ${ROOT_DIR}
         INTERNAL_PORT: ${ANIMATED_DRAWINGS_INTERNAL_PORT}
