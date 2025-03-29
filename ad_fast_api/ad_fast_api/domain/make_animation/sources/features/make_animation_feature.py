@@ -78,9 +78,9 @@ async def check_connection_and_rendering(
     logger: Logger,
 ):
     connection_timer = 0
-    connection_period = 5
+    connection_period = 5  # 5초 주기로 클라이언트 연결 확인
     render_timer = 0
-    max_render_time = 60  # 최대 1분 대기
+    max_render_time = 60 * 3  # 렌더링 최대 3분 대기
     video_file_path = base_path.joinpath(relative_video_file_path)
 
     try:
@@ -94,8 +94,10 @@ async def check_connection_and_rendering(
             connection_timer += 1
 
             if is_completed_render(video_file_path):
+                logger.info("Rendering has been completed.")
                 return
             render_timer += 1
+
             await asyncio.sleep(1)
         else:
             await cancel_render_async(job_id=job_id, logger=logger)

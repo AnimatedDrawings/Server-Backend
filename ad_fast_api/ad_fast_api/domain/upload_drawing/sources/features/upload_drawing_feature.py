@@ -42,10 +42,7 @@ async def save_origin_image_async(file: UploadFile) -> str:
 
 async def detect_character(ad_id: str) -> BoundingBox:
     base_path = get_base_path(ad_id=ad_id)
-
-    logger = setup_logger(
-        base_path=base_path,
-    )
+    logger = setup_logger(ad_id=ad_id)
 
     try:
         img = check_image_is_rgb(

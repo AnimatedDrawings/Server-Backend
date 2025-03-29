@@ -12,7 +12,6 @@ class WebSocketType(str, Enum):
     RUNNING = "running"
     FULL_JOB = "full_job"
     COMPLETE = "complete"
-    TERMINATE = "terminate"
 
 
 class WebSocketMessage(TypedDict):

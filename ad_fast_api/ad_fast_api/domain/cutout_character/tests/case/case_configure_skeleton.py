@@ -8,8 +8,9 @@ from ad_fast_api.domain.cutout_character.testings.mock_configure_skeleton import
 
 
 async def case_get_pose_result_async():
-    base_path = cw.get_base_path(ad_id=rf.EXAMPLE1_AD_ID)
-    logger = setup_logger(base_path=base_path)
+    ad_id = rf.EXAMPLE1_AD_ID
+    base_path = cw.get_base_path(ad_id=ad_id)
+    logger = setup_logger(ad_id=ad_id, base_path=base_path)
 
     cropped_image = configure_skeleton.get_cropped_image(
         base_path=base_path,
@@ -27,8 +28,9 @@ async def case_get_pose_result_async():
 
 
 def case_create_char_cfg_dict():
-    base_path = cw.get_base_path(ad_id=rf.EXAMPLE1_AD_ID)
-    mock_logger = setup_logger(base_path=base_path)
+    ad_id = rf.EXAMPLE1_AD_ID
+    base_path = cw.get_base_path(ad_id=ad_id)
+    mock_logger = setup_logger(ad_id=ad_id, base_path=base_path)
     cropped_image = configure_skeleton.get_cropped_image(
         base_path=base_path,
         logger=mock_logger,

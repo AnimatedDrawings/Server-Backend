@@ -17,7 +17,7 @@ class ConfigureSkeletonUser(HttpUser):
     def on_start(self):
         ad_id = rf.EXAMPLE1_AD_ID
         base_path = cw.get_base_path(ad_id=ad_id)
-        logger = setup_logger(base_path=base_path)
+        logger = setup_logger(ad_id=ad_id)
         cropped_image = get_cropped_image(
             base_path=base_path,
             logger=logger,

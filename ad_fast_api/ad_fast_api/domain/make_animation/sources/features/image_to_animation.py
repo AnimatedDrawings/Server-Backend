@@ -47,7 +47,7 @@ async def start_render_async(
             key_list=["data", "job_id"],
             from_dict=response,
         )
-        if type == WebSocketType.RUNNING.value and job_id is not None:
+        if type == WebSocketType.RUNNING and job_id is not None:
             logger.info("Animation rendering started.")
             return create_websocket_message(
                 WebSocketType.RUNNING,
@@ -56,7 +56,7 @@ async def start_render_async(
                     "job_id": job_id,
                 },
             )
-        elif type == WebSocketType.FULL_JOB.value:
+        elif type == WebSocketType.FULL_JOB:
             msg = "Animation rendering queue is full."
             logger.info(msg)
             return create_websocket_message(
@@ -98,7 +98,7 @@ async def cancel_render_async(
             return
 
         type = response.get("type")
-        if type == WebSocketType.TERMINATE.value:
+        if type == "terminate":
             logger.info("Animation rendering has been canceled.")
             return
         else:

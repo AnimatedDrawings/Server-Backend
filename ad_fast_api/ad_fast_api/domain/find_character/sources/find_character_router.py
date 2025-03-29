@@ -35,7 +35,7 @@ def find_character(
         status_code=500,
     )
 
-    logger = setup_logger(base_path=base_path)
+    logger = setup_logger(ad_id=ad_id)
     handle_operation(
         crop_and_segment_character,
         ad_id=ad_id,

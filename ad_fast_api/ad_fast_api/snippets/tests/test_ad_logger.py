@@ -5,7 +5,7 @@ from pathlib import Path
 def test_logger():
     # given
     test_dir = Path(__file__).parent
-    logger = setup_logger(base_path=test_dir)
+    logger = setup_logger(ad_id="test", base_path=test_dir)
 
     # when
     logger.error("test")

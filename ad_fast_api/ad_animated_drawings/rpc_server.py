@@ -139,4 +139,4 @@ if __name__ == "__main__":
         level=logging.INFO, format="%(asctime)s %(levelname)s: %(message)s"
     )
     logging.info(f"ZeroRPC server started, listening on port : {internal_port}")
-    app.run()
+    app.run(workers=1)

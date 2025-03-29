@@ -26,6 +26,7 @@ from ad_fast_api.domain.make_animation.sources.make_animation_schema import (
     create_websocket_message,
 )
 from ad_fast_api.snippets.sources.ad_dictionary import get_value_from_dict
+import logging
 
 
 router = APIRouter()
@@ -46,12 +47,16 @@ async def make_animation_websocket(
     파일 전송 완료 시 웹소켓 연결을 종료합니다.
     """
     base_path = get_base_path(ad_id=ad_id)
-    logger = setup_logger(base_path=base_path)
+    logger = setup_logger(ad_id=ad_id, level=logging.DEBUG)
 
     # 웹소켓 연결
     try:
-        await accept_websocket(websocket, logger)
+        await websocket.accept()
+        logger.info("The websocket connection has been successfully accepted.")
     except Exception as e:
+        msg = "An error occurred while accepting the websocket connection"
+        logger.error(f"{msg}: {e}")
+        await websocket.close()
         return
 
     # 애니메이션 이름 유효성 검사
@@ -88,12 +93,23 @@ async def make_animation_websocket(
         return
 
     # 애니메이션 렌더링 준비
-    animated_drawings_mvc_cfg_path = prepare_make_animation(
-        ad_id=ad_id,
-        base_path=base_path,
-        ad_animation=ad_animation,
-        relative_video_file_path=relative_video_file_path,
-    )
+    try:
+        animated_drawings_mvc_cfg_path = prepare_make_animation(
+            ad_id=ad_id,
+            base_path=base_path,
+            ad_animation=ad_animation,
+            relative_video_file_path=relative_video_file_path,
+        )
+    except Exception as e:
+        logger.error(f"Error preparing make animation: {e}")
+        await websocket.send_json(
+            create_websocket_message(
+                type=WebSocketType.ERROR,
+                message=str(e),
+            )
+        )
+        await websocket.close()
+        return
 
     # 애니메이션 렌더링 시작 요청
     start_websocket_message = await start_render_async(
@@ -102,10 +118,7 @@ async def make_animation_websocket(
     )
     await websocket.send_json(start_websocket_message)
     start_type = start_websocket_message["type"]
-    if (
-        start_type == WebSocketType.FULL_JOB.value
-        or start_type == WebSocketType.ERROR.value
-    ):
+    if start_type != WebSocketType.RUNNING:
         await websocket.close()
         return
 
@@ -175,7 +188,7 @@ async def download_animation(
     애니메이션 파일 다운로드
     """
     base_path = get_base_path(ad_id=ad_id)
-    logger = setup_logger(base_path=base_path)
+    logger = setup_logger(ad_id=ad_id)
 
     video_file_path, relative_video_file_path = get_video_file_path(
         base_path=base_path,

@@ -23,7 +23,7 @@ async def cutout_character(
     file: UploadFile = File(...),
 ) -> CutoutCharacterResponse:
     base_path = cw.get_base_path(ad_id=ad_id)
-    logger = setup_logger(base_path=base_path)
+    logger = setup_logger(ad_id=ad_id)
 
     await handle_operation_async(
         save_cutout_image_async,

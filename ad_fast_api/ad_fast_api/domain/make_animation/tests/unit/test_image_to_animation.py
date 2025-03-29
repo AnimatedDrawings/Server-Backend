@@ -124,7 +124,7 @@ async def test_cancel_render_terminate():
     응답 타입이 TERMINATE인 경우, 정상적으로 취소 처리되는지 확인합니다.
     """
     dummy_client = AsyncMock()
-    dummy_client.call.return_value = {"type": WebSocketType.TERMINATE.value}
+    dummy_client.call.return_value = {"type": "terminate"}
 
     with patch.object(img_anim, "get_zero_client", return_value=dummy_client):
         logger = logging.getLogger("test_cancel_render_terminate")
