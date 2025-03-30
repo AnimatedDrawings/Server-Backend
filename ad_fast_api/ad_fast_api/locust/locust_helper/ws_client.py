@@ -4,15 +4,35 @@ from ad_fast_api.domain.make_animation.sources.make_animation_schema import (
 )
 import time
 import json
+import logging
+
+
+def record_time(task_func):
+    def wrapper(*args, **kwargs):
+        start_time = time.time()
+        logging.info(
+            "작업 시작 시간: "
+            + time.strftime("%Y-%m-%d %H:%M:%S", time.localtime(start_time))
+        )
+        result = task_func(*args, **kwargs)
+        end_time = time.time()
+        logging.info(
+            "작업 종료 시간: "
+            + time.strftime("%Y-%m-%d %H:%M:%S", time.localtime(end_time))
+        )
+        return result
+
+    return wrapper
 
 
 class WebSocketClient:
-    def __init__(self, connection_id, url, environment, teardown):
+    def __init__(self, connection_id, url, environment, teardown, start_test_time):
         self.connection_id = connection_id
         self.url = url
         self.environment = environment
         self.ws = None
         self.start_time = time.time()
+        self.start_test_time = start_test_time
         self.teardown = teardown
 
     def connect(self):
@@ -48,6 +68,10 @@ class WebSocketClient:
             exception=exception or None,
         )
 
+    def log_task_execution_time(self):
+        end_time = time.time()
+        logging.warning(f"작업 소요 시간: {end_time - self.start_test_time}초")
+
     def on_open(self, ws):
         connect_time = time.time() - self.start_time
         self.log_event(
@@ -65,7 +89,7 @@ class WebSocketClient:
             },
         )
         # 연결 종료 시 teardown 호출
-        # self.teardown()
+        self.teardown()
 
     def on_message(self, ws, message):
         try:
@@ -116,7 +140,6 @@ class WebSocketClient:
                 response_length=len(message),
                 response=msg,
             )
-            self.teardown()
             ws.close()
 
         elif data_type == WebSocketType.COMPLETE:
@@ -125,7 +148,7 @@ class WebSocketClient:
                 name=f"{data_type}, {self.connection_id}",
                 response_time=complete_time,
             )
-            self.teardown()
+            self.log_task_execution_time()
             ws.close()
 
         else:

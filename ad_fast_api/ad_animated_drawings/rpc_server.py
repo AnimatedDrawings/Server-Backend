@@ -35,7 +35,7 @@ def create_rpc_message(
 
 # 전역 변수: 실행 중인 render 작업들을 저장합니다.
 active_render_processes = {}
-MAX_RENDER_PROCESSES = 3
+MAX_RENDER_PROCESSES = 1
 
 
 def get_internal_port():
