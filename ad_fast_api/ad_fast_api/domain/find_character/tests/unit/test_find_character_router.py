@@ -53,7 +53,7 @@ def test_find_character_success(mock_logger):
         bounding_box=bounding_box,
         base_path=base_path,
     )
-    mock_setup_logger.assert_called_once_with(base_path=base_path)
+    mock_setup_logger.assert_called_once_with(ad_id=ad_id)
     mock_crop_and_segment_character.assert_called_once_with(
         ad_id=ad_id,
         bounding_box=bounding_box,

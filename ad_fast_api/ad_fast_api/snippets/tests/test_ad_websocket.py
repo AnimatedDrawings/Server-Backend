@@ -102,7 +102,7 @@ async def test_retry_ping_success_on_second_try():
     )
 
     # 로거의 error가 정확히 1번 호출되었는지 확인 (첫 번째 실패에 대한 로깅)
-    assert logger.error.call_count == 1
+    assert logger.warning.call_count == 1
 
 
 @pytest.mark.asyncio
@@ -120,8 +120,8 @@ async def test_retry_ping_failure():
 
     # 웹소켓의 send_json이 MAX_RETRIES 횟수만큼 호출되었는지 확인
     assert websocket.send_json.call_count == MAX_RETRIES
-    # 로거의 error가 MAX_RETRIES 횟수만큼 호출되었는지 확인
-    assert logger.error.call_count == MAX_RETRIES
+    # 로거의 warning이 MAX_RETRIES 횟수만큼 호출되었는지 확인
+    assert logger.warning.call_count == MAX_RETRIES
 
 
 # retry_pong 함수 테스트
@@ -172,11 +172,11 @@ async def test_retry_pong_success_on_second_try():
     assert websocket.receive_json.call_count == 2
 
     # 로거의 error가 정확히 1번 호출되었는지 확인 (첫 번째 실패에 대한 로깅)
-    assert logger.error.call_count == 1
+    assert logger.warning.call_count == 1
 
     # 로그 메시지에 "유효하지 않은 응답"이 포함되어 있는지 확인
-    logger.error.assert_called_once()
-    assert "유효하지 않은 응답" in logger.error.call_args[0][0]
+    logger.warning.assert_called_once()
+    assert "유효하지 않은 응답" in logger.warning.call_args[0][0]
 
 
 @pytest.mark.asyncio
@@ -202,11 +202,11 @@ async def test_retry_pong_exception_then_success():
     assert websocket.receive_json.call_count == 2
 
     # 로거의 error가 정확히 1번 호출되었는지 확인 (첫 번째 시도 실패에 대한 로깅)
-    assert logger.error.call_count == 1
+    assert logger.warning.call_count == 1
 
     # 로그 메시지에 "오류 발생"이 포함되어 있는지 확인
-    logger.error.assert_called_once()
-    assert "오류 발생" in logger.error.call_args[0][0]
+    logger.warning.assert_called_once()
+    assert "오류 발생" in logger.warning.call_args[0][0]
 
 
 @pytest.mark.asyncio

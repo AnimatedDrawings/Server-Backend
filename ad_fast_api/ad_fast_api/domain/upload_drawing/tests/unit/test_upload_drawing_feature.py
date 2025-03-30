@@ -138,7 +138,7 @@ async def test_detect_character_success():
 
     # then: 함수들이 올바른 인자와 순서로 호출되었는지 확인
     mock_get_base_path.assert_called_once_with(ad_id=ad_id)
-    mock_setup_logger.assert_called_once_with(base_path=fake_base_path)
+    mock_setup_logger.assert_called_once_with(ad_id=ad_id)
     mock_check_image.assert_called_once_with(
         base_path=fake_base_path, logger=fake_logger
     )

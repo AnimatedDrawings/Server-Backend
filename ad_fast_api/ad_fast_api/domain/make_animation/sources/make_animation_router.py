@@ -15,7 +15,6 @@ from ad_fast_api.domain.make_animation.sources.features.image_to_animation impor
 from ad_fast_api.workspace.sources.conf_workspace import get_base_path
 from ad_fast_api.snippets.sources.ad_websocket import (
     custom_openapi,
-    accept_websocket,
 )
 from ad_fast_api.snippets.sources.ad_logger import setup_logger
 from ad_fast_api.domain.make_animation.sources.errors.make_animation_500_status import (

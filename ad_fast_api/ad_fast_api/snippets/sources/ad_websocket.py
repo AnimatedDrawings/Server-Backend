@@ -47,7 +47,7 @@ async def retry_ping(
         except Exception as e:
             retry_count += 1
             msg = f"Ping 메시지 전송 실패 (시도 {retry_count}/{MAX_RETRIES}): {e}"
-            logger.debug(msg)
+            logger.warning(msg)
             await asyncio.sleep(INTERVAL_SLEEP)
     else:
         msg = (
@@ -77,14 +77,14 @@ async def retry_pong(
 
             retry_count += 1
             msg = f"유효하지 않은 응답 (시도 {retry_count}/{max_retries}) : {response}"
-            logger.error(msg)
+            logger.warning(msg)
             await asyncio.sleep(INTERVAL_SLEEP)
         except Exception as e:
             retry_count += 1
             msg = (
                 f"pong 응답 처리 중 오류 발생 (시도 {retry_count}/{max_retries}) : {e}"
             )
-            logger.debug(msg)
+            logger.warning(msg)
             await asyncio.sleep(INTERVAL_SLEEP)
     else:
         msg = f"pong 응답 처리 최대 재시도 횟수 초과 (시도 {retry_count}/{max_retries})"

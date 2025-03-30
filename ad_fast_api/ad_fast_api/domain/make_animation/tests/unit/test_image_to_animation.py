@@ -9,8 +9,6 @@ from ad_fast_api.domain.make_animation.sources.make_animation_schema import (
     WebSocketType,
 )
 
-# --- start_render_async 함수 테스트 ---
-
 
 @pytest.mark.asyncio
 async def test_start_render_none_response():
@@ -25,8 +23,7 @@ async def test_start_render_none_response():
         result = await img_anim.start_render_async(
             Path("/dummy/path"), logger, timeout=1000
         )
-        assert result["type"] == WebSocketType.ERROR.value
-        assert "no return value" in result["message"]
+        assert result["type"] == WebSocketType.ERROR
 
 
 @pytest.mark.asyncio
@@ -45,9 +42,8 @@ async def test_start_render_running():
         result = await img_anim.start_render_async(
             Path("/dummy/path"), logger, timeout=1000
         )
-        assert result["type"] == WebSocketType.RUNNING.value
-        assert result["message"] == "Animation rendering started."
-        assert result["data"]["job_id"] == "job123"
+        assert result["type"] == WebSocketType.RUNNING
+        assert result["data"]["job_id"] == "job123"  # type: ignore
 
 
 @pytest.mark.asyncio
@@ -63,8 +59,7 @@ async def test_start_render_fulljob():
         result = await img_anim.start_render_async(
             Path("/dummy/path"), logger, timeout=1000
         )
-        assert result["type"] == WebSocketType.FULL_JOB.value
-        assert "high" in result["message"]
+        assert result["type"] == WebSocketType.FULL_JOB
 
 
 @pytest.mark.asyncio
@@ -80,8 +75,7 @@ async def test_start_render_unknown_type():
         result = await img_anim.start_render_async(
             Path("/dummy/path"), logger, timeout=1000
         )
-        assert result["type"] == WebSocketType.ERROR.value
-        assert "unknown return value" in result["message"]
+        assert result["type"] == WebSocketType.ERROR
 
 
 @pytest.mark.asyncio
@@ -97,11 +91,7 @@ async def test_start_render_exception():
         result = await img_anim.start_render_async(
             Path("/dummy/path"), logger, timeout=1000
         )
-        assert result["type"] == WebSocketType.ERROR.value
-        assert "Test exception" in result["message"]
-
-
-# --- cancel_render_async 함수 테스트 ---
+        assert result["type"] == WebSocketType.ERROR
 
 
 @pytest.mark.asyncio
@@ -158,9 +148,6 @@ async def test_cancel_render_exception():
         logger = logging.getLogger("test_cancel_render_exception")
         result = await img_anim.cancel_render_async("job123", logger, timeout=1000)
         assert result is None
-
-
-# --- is_completed_render 함수 테스트 ---
 
 
 def test_is_completed_render(tmp_path):

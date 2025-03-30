@@ -11,7 +11,7 @@ from ad_fast_api.workspace.sources.conf_workspace import (
 from ad_fast_api.snippets.testings.mock_logger import mock_logger
 
 
-def test_valid_animations(mock_logger):
+def test_check_available_animation_success(mock_logger):
     """
     올바른 애니메이션 값을 인자로 주었을 때 예외가 발생하지 않는지 확인합니다.
     """
@@ -19,7 +19,7 @@ def test_valid_animations(mock_logger):
         cmai.check_available_animation(valid_animation, mock_logger)
 
 
-def test_invalid_animation(mock_logger):
+def test_check_available_animation_raises_exception(mock_logger):
     """
     잘못된 애니메이션 값을 인자로 주었을 때 예외가 발생하는지 확인합니다.
     """

@@ -8,10 +8,10 @@ class ADAnimation(str, Enum):
 
 
 class WebSocketType(str, Enum):
-    ERROR = "error"
-    RUNNING = "running"
-    FULL_JOB = "full_job"
-    COMPLETE = "complete"
+    ERROR = "ERROR"
+    RUNNING = "RUNNING"
+    FULL_JOB = "FULL_JOB"
+    COMPLETE = "COMPLETE"
 
 
 class WebSocketMessage(TypedDict):

@@ -100,9 +100,7 @@ async def check_connection_and_rendering(
 
             await asyncio.sleep(1)
         else:
-            await cancel_render_async(job_id=job_id, logger=logger)
             msg = "Rendering time has exceeded the limit."
-            logger.error(msg)
             raise Exception(msg)
     except WebSocketDisconnect as e:
         msg = "The websocket connection with the client has been terminated"
@@ -110,7 +108,7 @@ async def check_connection_and_rendering(
         await cancel_render_async(job_id=job_id, logger=logger)
         raise Exception(msg)
     except Exception as e:
-        msg = "An error occurred while processing the job"
-        logger.error(f"{msg}: {e}")
+        msg = f"An error occurred while processing the job : {e}"
+        logger.error(msg)
         await cancel_render_async(job_id=job_id, logger=logger)
         raise Exception(msg)
