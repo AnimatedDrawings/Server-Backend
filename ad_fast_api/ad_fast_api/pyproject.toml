@@ -1,0 +1,36 @@
+[project]
+name = "ad_fast_api"
+version = "0.1.0"
+description = ""
+authors = [
+    {name = "chminipark",email = "chminipark@gmail.com"}
+]
+readme = "README.md"
+requires-python = ">=3.13.2"
+dependencies = [
+    "fastapi (>=0.115.8,<0.116.0)",
+    "uvicorn (>=0.34.0,<0.35.0)",
+    "httpx (>=0.28.1,<0.29.0)",
+    "aiofiles (>=24.1.0,<25.0.0)",
+    "pytest (>=8.3.4,<9.0.0)",
+    "pytest-asyncio (>=0.25.3,<0.26.0)",
+    "opencv-python (>=4.11.0.86,<5.0.0.0)",
+    "opencv-python-headless (>=4.11.0.86,<5.0.0.0)",
+    "pyyaml (>=6.0.2,<7.0.0)",
+    "respx (>=0.22.0,<0.23.0)",
+    "python-multipart (>=0.0.20,<0.0.21)",
+    "scikit-image (>=0.25.2,<0.26.0)",
+    "faker (>=36.1.1,<37.0.0)",
+    "zeroapi (>=0.8.0,<0.9.0)",
+    "locust (>=2.33.0,<3.0.0)",
+    "websocket-client (>=1.8.0,<2.0.0)",
+    "websockets (>=15.0.1,<16.0.0)",
+]
+
+
+[build-system]
+requires = ["poetry-core>=2.0.0,<3.0.0"]
+build-backend = "poetry.core.masonry.api"
+[tool.poetry.group.dev.dependencies]
+pytest-cov = "^6.0.0"
+
