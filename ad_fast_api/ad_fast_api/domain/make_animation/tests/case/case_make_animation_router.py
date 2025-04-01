@@ -1,5 +1,5 @@
 from ad_fast_api.domain.make_animation.sources.make_animation_router import (
-    make_animation,
+    make_animation_websocket,
 )
 from ad_fast_api.workspace.sources import reqeust_files as rf
 import shutil
@@ -16,9 +16,10 @@ async def case_make_animation_router(ad_id: str):
     async def make_animation_async():
         ad_animation = "dab"
 
-        response = await make_animation(
+        response = await make_animation_websocket(
             ad_id=ad_id,
             ad_animation=ad_animation,
+            websocket=None,
         )
         return response
 

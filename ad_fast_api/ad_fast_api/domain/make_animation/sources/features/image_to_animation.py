@@ -98,7 +98,7 @@ async def cancel_render_async(
             return
 
         type = response.get("type")
-        if type == "terminate":
+        if type == "TERMINATE":
             logger.info("Animation rendering has been canceled.")
             return
         else:

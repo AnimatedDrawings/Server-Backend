@@ -8,10 +8,10 @@ from typing import TypedDict, Optional, Any, Dict
 
 
 class RPCType(str, Enum):
-    PING = "ping"
-    RUNNING = "running"
-    FULL_JOB = "full_job"
-    TERMINATE = "terminate"
+    PING = "PING"
+    RUNNING = "RUNNING"
+    FULL_JOB = "FULL_JOB"
+    TERMINATE = "TERMINATE"
 
 
 class RPCMessage(TypedDict):
