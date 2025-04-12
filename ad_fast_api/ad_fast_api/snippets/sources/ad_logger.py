@@ -5,6 +5,7 @@ from pathlib import Path
 from typing import Optional
 from ad_fast_api.workspace.sources.conf_workspace import get_base_path
 
+
 LOG_FILE_NAME = "log.txt"
 
 
@@ -22,28 +23,33 @@ def setup_logger(
 
     # 로거 생성
     logger = logging.getLogger(ad_id)
-    logger.setLevel(level)
+    # 이미 핸들러가 등록되어 있는지 확인
+    if not logger.handlers:
+        logger.setLevel(level)
 
-    # 로그 포맷 설정
-    formatter = logging.Formatter(
-        "%(asctime)s - %(name)s - %(levelname)s - %(message)s"
-    )
+        # 로그 포맷 설정
+        formatter = logging.Formatter(
+            "%(asctime)s - %(name)s - %(levelname)s - %(message)s"
+        )
 
-    # RotatingFileHandler 설정
-    file_handler = RotatingFileHandler(
-        log_file,
-        maxBytes=max_size,
-        backupCount=backup_count,
-    )
-    file_handler.setFormatter(formatter)
+        # RotatingFileHandler 설정
+        file_handler = RotatingFileHandler(
+            log_file,
+            maxBytes=max_size,
+            backupCount=backup_count,
+        )
+        file_handler.setFormatter(formatter)
 
-    # 스트림 핸들러 설정 (콘솔 출력용)
-    stream_handler = logging.StreamHandler()
-    stream_handler.setFormatter(formatter)
+        # 스트림 핸들러 설정 (콘솔 출력용)
+        stream_handler = logging.StreamHandler()
+        stream_handler.setFormatter(formatter)
 
-    # 로거에 핸들러 추가
-    logger.addHandler(file_handler)
-    logger.addHandler(stream_handler)
+        # 로거에 핸들러 추가
+        logger.addHandler(file_handler)
+        logger.addHandler(stream_handler)
+    else:
+        # 이미 핸들러가 등록되어 있다면 로깅 레벨만 업데이트
+        logger.setLevel(level)
 
     return logger
 

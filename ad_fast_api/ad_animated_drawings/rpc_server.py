@@ -38,6 +38,16 @@ active_render_processes = {}
 MAX_RENDER_PROCESSES = 1
 
 
+def clean_finished_jobs():
+    finished_jobs = [
+        job_id
+        for job_id, proc in active_render_processes.items()
+        if not proc.is_alive()
+    ]
+    for job_id in finished_jobs:
+        del active_render_processes[job_id]
+
+
 def get_internal_port():
     internal_port = os.environ.get("INTERNAL_PORT")
     if internal_port is None:
@@ -68,14 +78,7 @@ def start_render(mvc_cfg_file_path: str) -> Dict[str, Any]:
 
     from animated_drawings import render  # type: ignore
 
-    # 종료된 프로세스들을 정리합니다.
-    finished_jobs = [
-        job_id
-        for job_id, proc in active_render_processes.items()
-        if not proc.is_alive()
-    ]
-    for job_id in finished_jobs:
-        del active_render_processes[job_id]
+    clean_finished_jobs()
 
     if len(active_render_processes) >= MAX_RENDER_PROCESSES:
         message = (
@@ -132,6 +135,26 @@ def cancel_render(job_id: str) -> Dict[str, Any]:
         RPCType.TERMINATE,
         f"job_id {job_id}의 render 프로세스가 종료되었습니다.",
     )
+
+
+@app.register_rpc
+def is_finish_render(job_id: str) -> Dict[str, Any]:
+    clean_finished_jobs()
+
+    if job_id not in active_render_processes:
+        msg = f"job_id {job_id}의 render 작업이 완료되었습니다"
+        logging.info(msg)
+        return create_rpc_message(
+            RPCType.TERMINATE,
+            msg,
+        )
+    else:
+        msg = f"job_id {job_id}의 render 작업이 진행중입니다"
+        logging.info(msg)
+        return create_rpc_message(
+            RPCType.RUNNING,
+            msg,
+        )
 
 
 if __name__ == "__main__":

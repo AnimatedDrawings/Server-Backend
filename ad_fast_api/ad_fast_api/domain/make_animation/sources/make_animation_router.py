@@ -141,10 +141,10 @@ async def make_animation_websocket(
     try:
         await check_connection_and_rendering(
             job_id=job_id,
-            base_path=base_path,
-            relative_video_file_path=relative_video_file_path,
             websocket=websocket,
             logger=logger,
+            base_path=base_path,
+            relative_video_file_path=relative_video_file_path,
         )
     except Exception as e:
         await websocket.send_json(
@@ -182,7 +182,7 @@ async def make_animation_websocket(
 async def download_animation(
     ad_id: str,
     ad_animation: str,
-):
+) -> FileResponse:
     """
     애니메이션 파일 다운로드
     """
@@ -201,6 +201,9 @@ async def download_animation(
         base_path=base_path,
         relative_video_file_path=relative_video_file_path,
     )
+    # 파일 크기를 계산하여 Content-Length 헤더에 추가합니다.
+    file_size = video_file_path.stat().st_size
+    file_response.headers["Content-Length"] = str(file_size)
     return file_response
 
 

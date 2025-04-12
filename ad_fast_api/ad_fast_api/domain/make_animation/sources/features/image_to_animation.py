@@ -14,22 +14,24 @@ from ad_fast_api.snippets.sources.ad_dictionary import get_value_from_dict
 def get_zero_client(
     host: str = "animated_drawings",
     port: int = 8001,
-    timeout: Optional[int] = None,
+    timeout_seconds: Optional[float] = None,
 ) -> AsyncZeroClient:
+    timeout = int(timeout_seconds * 1000) if timeout_seconds != None else 3000
+
     return AsyncZeroClient(
         host,
         port,
-        default_timeout=timeout or 2000,
+        default_timeout=timeout,
     )
 
 
 async def start_render_async(
     animated_drawings_mvc_cfg_path: Path,
     logger: Logger,
-    timeout: Optional[int] = None,
+    timeout_seconds: Optional[float] = None,
 ) -> WebSocketMessage:
     try:
-        response = await get_zero_client(timeout=timeout).call(
+        response = await get_zero_client(timeout_seconds=timeout_seconds).call(
             "start_render",
             animated_drawings_mvc_cfg_path.as_posix(),
         )
@@ -84,10 +86,10 @@ async def start_render_async(
 async def cancel_render_async(
     job_id: str,
     logger: Logger,
-    timeout: Optional[int] = None,
+    timeout_seconds: Optional[float] = None,
 ):
     try:
-        response = await get_zero_client(timeout=timeout).call(
+        response = await get_zero_client(timeout_seconds=timeout_seconds).call(
             "cancel_render",
             job_id,
         )
@@ -111,7 +113,36 @@ async def cancel_render_async(
         return
 
 
-def is_completed_render(
-    video_file_path: Path,
+async def is_finish_render(
+    job_id: str,
+    logger: Logger,
+    timeout_seconds: Optional[float] = None,
 ) -> bool:
-    return video_file_path.exists()
+    try:
+        response = await get_zero_client(timeout_seconds=timeout_seconds).call(
+            "is_finish_render",
+            job_id,
+        )
+
+        if response is None:
+            msg = "Failed to check if animation rendering is finished, no return value."
+            logger.error(msg)
+            raise Exception(msg)
+
+        type = response.get("type")
+        if type == "TERMINATE":
+            logger.info("Animation rendering has been canceled.")
+            return True
+        elif type == "RUNNING":
+            logger.info("Animation rendering is in progress.")
+            return False
+        else:
+            msg = f"Failed to check if animation rendering is finished, unknown return value. {response}"
+            logger.error(msg)
+            raise Exception(msg)
+    except Exception as e:
+        msg = (
+            f"Failed to check if animation rendering is finished, connection error. {e}"
+        )
+        logger.error(msg)
+        raise Exception(msg)

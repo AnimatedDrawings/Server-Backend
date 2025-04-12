@@ -35,7 +35,7 @@ async def retry_ping(
             await asyncio.wait_for(
                 websocket.send_json(
                     {
-                        "type": "ping",
+                        "type": "PING",
                         "message": "",
                         "data": {},
                     }
@@ -71,8 +71,8 @@ async def retry_pong(
                 timeout=TIMEOUT,
             )
 
-            if response.get("type") == "pong":
-                logger.debug("pong 응답 수신")
+            if response.get("type") == "PONG":
+                logger.debug("PONG 응답 수신")
                 return
 
             retry_count += 1

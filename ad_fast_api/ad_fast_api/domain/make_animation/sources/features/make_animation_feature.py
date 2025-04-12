@@ -10,7 +10,7 @@ from ad_fast_api.workspace.sources.conf_workspace import (
     MVC_CFG_FILE_NAME,
 )
 from ad_fast_api.domain.make_animation.sources.features.image_to_animation import (
-    is_completed_render,
+    is_finish_render,
     cancel_render_async,
 )
 from ad_fast_api.snippets.sources.ad_websocket import check_connection
@@ -93,7 +93,15 @@ async def check_connection_and_rendering(
             )
             connection_timer += 1
 
-            if is_completed_render(video_file_path):
+            if await is_finish_render(
+                job_id=job_id,
+                logger=logger,
+                timeout_seconds=7,
+            ):
+                if not video_file_path.exists():
+                    msg = "Rendering has been completed, but the video file does not exist."
+                    logger.error(msg)
+                    raise Exception(msg)
                 logger.info("Rendering has been completed.")
                 return
             render_timer += 1
