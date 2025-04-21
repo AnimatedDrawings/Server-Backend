@@ -9,9 +9,21 @@ from ad_fast_api.snippets.sources.ad_case_test_helper import (
 )
 from ad_fast_api.locust.locust_helper.ws_client import WebSocketClient
 from ad_fast_api.locust.locust_helper.locust_record_time import record_time
+import psutil
+import threading
 
 
 start_test_time = None
+max_cpu_usage = 0
+
+
+def monitor_cpu(interval=1):
+    global max_cpu_usage
+    while True:
+        # interval 시간 동안의 CPU 사용률 측정
+        usage = psutil.cpu_percent(interval=interval)
+        if usage > max_cpu_usage:
+            max_cpu_usage = usage
 
 
 @events.test_start.add_listener
@@ -24,6 +36,9 @@ def on_start_load_test(environment, **kwargs):
         f"테스트 시작 시간: {time.strftime('%Y-%m-%d %H:%M:%S', time.localtime(start_test_time))}"
     )
 
+    cpu_monitor_thread = threading.Thread(target=monitor_cpu, args=(1,), daemon=True)
+    cpu_monitor_thread.start()
+
 
 @events.test_stop.add_listener
 def on_stop_load_test(environment, **kwargs):
@@ -32,6 +47,7 @@ def on_stop_load_test(environment, **kwargs):
     logging.warning(
         f"테스트 종료 시간: {time.strftime('%Y-%m-%d %H:%M:%S', time.localtime(stop_time))}"
     )
+    logging.warning(f"최대 CPU 사용량: {max_cpu_usage}%")
 
 
 class MakeAnimationUser(HttpUser):
@@ -53,16 +69,17 @@ class MakeAnimationUser(HttpUser):
             connection_id=ad_id,
             url=ws_url,
             environment=self.environment,
-            teardown=lambda: remove_workspace(ad_id),
+            # teardown=lambda: remove_workspace(ad_id),
+            teardown=lambda: None,
             start_test_time=start_test_time,
         )
         ws_client.connect()
 
-        gevent.sleep(3)
+        gevent.sleep(5)
 
 
 # sudo $(poetry run which python) locust_make_animation.py
-# sudo $(which locust) --processes -1 -f locust_make_animation.py
+# sudo $(which locust) --processes -1 -f locust_make_animation.py --loglevel=WARNING
 # sudo $(which locust) --processes 10 -f locust_make_animation.py --loglevel=WARNING
-# sudo $(which locust) --processes 1 -f locust_make_animation.py --loglevel=WARNING
+# sudo $(which locust) --processes 3 -f locust_make_animation.py --loglevel=WARNING
 # locust -f locust_make_animation.py

@@ -161,9 +161,6 @@ async def make_animation_websocket(
         create_websocket_message(
             type=WebSocketType.COMPLETE,
             message="Animation rendering has been completed.",
-            data={
-                "file_path": str(relative_video_file_path),
-            },
         )
     )
     await websocket.close()
@@ -210,9 +207,9 @@ async def download_animation(
 def make_animation_openapi(app: FastAPI):
     return custom_openapi(
         app=app,
-        paths="/test/make_animation",
+        paths="/make_animation",
         method="post",
-        summary="WebSocket /test/make_animation Endpoint",
+        summary="WebSocket /make_animation Endpoint",
         description=(
             "이 엔드포인트는 웹소켓 연결을 위한 엔드포인트입니다. 실제 연결은 웹소켓 프로토콜을 통해 이루어지며, "
             "HTTP GET 라우터는 단지 문서화 목적으로만 포함되어 있습니다."

@@ -56,6 +56,7 @@ def prepare_make_animation(
     mvc_cfg_dict = create_mvc_config(
         animated_drawings_dict=animated_drawings_dict,
         video_file_path=video_file_path,
+        ad_animation=ad_animation,
     )
     save_mvc_config(
         mvc_cfg_file_name=MVC_CFG_FILE_NAME,
@@ -69,6 +70,14 @@ def prepare_make_animation(
     return animated_drawings_mvc_cfg_path
 
 
+def period_finish_render(
+    timer: int,
+    period: int,
+) -> bool:
+    reward_advertisement_time = 20
+    return reward_advertisement_time < timer and timer % period == 0
+
+
 # 주기적으로 렌더링 완료 확인 및 연결 상태 확인
 async def check_connection_and_rendering(
     job_id: str,
@@ -79,6 +88,7 @@ async def check_connection_and_rendering(
 ):
     connection_timer = 0
     connection_period = 5  # 5초 주기로 클라이언트 연결 확인
+    finish_render_period = 2
     render_timer = 0
     max_render_time = 60 * 3  # 렌더링 최대 3분 대기
     video_file_path = base_path.joinpath(relative_video_file_path)
@@ -93,7 +103,10 @@ async def check_connection_and_rendering(
             )
             connection_timer += 1
 
-            if await is_finish_render(
+            if period_finish_render(
+                timer=render_timer,
+                period=finish_render_period,
+            ) and await is_finish_render(
                 job_id=job_id,
                 logger=logger,
                 timeout_seconds=7,
