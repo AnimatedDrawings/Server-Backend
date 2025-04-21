@@ -2,7 +2,7 @@ services:
   ad_torchserve:
     container_name: ad_torchserve
     build:
-      context: ./ad_fast_api/ad_torchserve
+      context: ./modules/ad_torchserve
       dockerfile: ./ad_torchserve.Dockerfile
     # restart: always
     # expose:
@@ -24,15 +24,15 @@ services:
   animated_drawings:
     container_name: animated_drawings
     build:
-      context: ./ad_fast_api/ad_animated_drawings
+      context: ./modules/ad_animated_drawings
       dockerfile: ./ad_animated_drawings.Dockerfile
       args:
-        WORK_DIR: ${ROOT_DIR}
+        ROOT_DIR: ${ROOT_DIR}
         INTERNAL_PORT: ${ANIMATED_DRAWINGS_INTERNAL_PORT}
         ANIMATED_DRAWINGS_WORKSPACE_DIR: ${ANIMATED_DRAWINGS_WORKSPACE_DIR}
     volumes:
-      - ./ad_fast_api/ad_fast_api/workspace/files:/${ROOT_DIR}/${ANIMATED_DRAWINGS_WORKSPACE_DIR}/files
-      - ./ad_fast_api/ad_fast_api/workspace/config:/${ROOT_DIR}/${ANIMATED_DRAWINGS_WORKSPACE_DIR}/config
+      - ./modules/ad_fast_api/ad_fast_api/workspace/files:/${ROOT_DIR}/${ANIMATED_DRAWINGS_WORKSPACE_DIR}/files
+      - ./modules/ad_fast_api/ad_fast_api/workspace/config:/${ROOT_DIR}/${ANIMATED_DRAWINGS_WORKSPACE_DIR}/config
     # restart: always
     expose:
       - ${ANIMATED_DRAWINGS_INTERNAL_PORT}
@@ -51,17 +51,17 @@ services:
   ad_fast_api:
     container_name: ad_fast_api
     build:
-      context: ./ad_fast_api/ad_fast_api
+      context: ./modules/ad_fast_api
       dockerfile: ./ad_fast_api.Dockerfile
       args:
-        WORK_DIR: ${ROOT_DIR}
+        ROOT_DIR: ${ROOT_DIR}
         INTERNAL_PORT: ${AD_FAST_API_INTERNAL_PORT}
         ANIMATED_DRAWINGS_WORKSPACE_DIR: ${ANIMATED_DRAWINGS_WORKSPACE_DIR}
     # restart: always
     ports:
       - ${AD_FAST_API_EXTERNAL_PORT}:${AD_FAST_API_INTERNAL_PORT}
     volumes:
-      - ./ad_fast_api/ad_fast_api:/${ROOT_DIR}/ad_fast_api
+      - ./modules/ad_fast_api/ad_fast_api:/${ROOT_DIR}/ad_fast_api/
     # you can use limit system resources
     # deploy:
     #   resources:

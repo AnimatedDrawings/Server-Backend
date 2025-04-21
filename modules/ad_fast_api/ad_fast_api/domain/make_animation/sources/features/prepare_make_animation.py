@@ -42,6 +42,8 @@ def create_mvc_config(
         },  # add the character to the scene
         "view": {
             "USE_MESA": True,
+            "CAMERA_POS": [2.0, 0.7, 8.0],
+            "CAMERA_FWD": [0.0, 0.5, 8.0],
         },
         "controller": {
             "MODE": "video_render",  # 'video_render' or 'interactive'

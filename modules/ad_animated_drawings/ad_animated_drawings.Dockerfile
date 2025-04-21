@@ -1,11 +1,11 @@
 FROM python:3.8.13
 
-ARG WORK_DIR
+ARG ROOT_DIR
 ARG INTERNAL_PORT
 ARG ANIMATED_DRAWINGS_WORKSPACE_DIR
 
 ENV INTERNAL_PORT=${INTERNAL_PORT}
-ENV PYTHONPATH "${PYTHONPATH}:/${WORK_DIR}/AnimatedDrawings"
+ENV PYTHONPATH "${PYTHONPATH}:/${ROOT_DIR}/AnimatedDrawings"
 
 # install wget
 RUN apt-get update && \
@@ -29,7 +29,7 @@ RUN apt-get update && \
 RUN apt-get update && \
     apt-get install -y git
 
-WORKDIR /${WORK_DIR}
+WORKDIR /${ROOT_DIR}
 
 # AnimatedDrawings 저장소를 GitHub에서 클론
 RUN git clone https://github.com/facebookresearch/AnimatedDrawings.git

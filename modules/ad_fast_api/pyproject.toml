@@ -2,11 +2,9 @@
 name = "ad_fast_api"
 version = "0.1.0"
 description = ""
-authors = [
-    {name = "chminipark",email = "chminipark@gmail.com"}
-]
-readme = "README.md"
+authors = [{ name = "chminipark", email = "chminipark@gmail.com" }]
 requires-python = ">=3.13.2"
+readme = "README.md"
 dependencies = [
     "fastapi (>=0.115.8,<0.116.0)",
     "uvicorn (>=0.34.0,<0.35.0)",
@@ -27,10 +25,10 @@ dependencies = [
     "websockets (>=15.0.1,<16.0.0)",
 ]
 
-
 [build-system]
-requires = ["poetry-core>=2.0.0,<3.0.0"]
-build-backend = "poetry.core.masonry.api"
-[tool.poetry.group.dev.dependencies]
-pytest-cov = "^6.0.0"
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[dependency-groups]
+dev = ["pytest-cov>=6.0.0,<7"]
 

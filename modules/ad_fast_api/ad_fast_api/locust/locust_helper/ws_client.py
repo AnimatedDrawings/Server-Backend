@@ -103,7 +103,7 @@ class WebSocketClient:
             ws.close()
             return
 
-        if data_type == "ping":
+        if data_type == "PING":
             self.log_event(
                 name=f"ping pong",
                 response_length=len(message),
@@ -111,7 +111,7 @@ class WebSocketClient:
             ws.send(
                 json.dumps(
                     {
-                        "type": "pong",
+                        "type": "PONG",
                         "message": "",
                         "data": {},
                     },
@@ -154,7 +154,7 @@ class WebSocketClient:
         else:
             msg = f"Unknown message: {data_type or 'unknown'}"
             self.log_event(
-                name=f"unknown_message, {self.connection_id}",
+                name=f"unknown_message, {data_type}",
                 response_length=len(message),
                 response=msg,
             )

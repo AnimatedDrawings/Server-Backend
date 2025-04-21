@@ -131,7 +131,7 @@ async def is_finish_render(
 
         type = response.get("type")
         if type == "TERMINATE":
-            logger.info("Animation rendering has been canceled.")
+            logger.info("Animation rendering is finished.")
             return True
         elif type == "RUNNING":
             logger.info("Animation rendering is in progress.")
