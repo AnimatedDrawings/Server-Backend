@@ -4,6 +4,56 @@ from ad_fast_api.workspace.sources.conf_workspace import (
 )
 from pathlib import Path
 from ad_fast_api.snippets.sources.save_dict import dict_to_file
+from typing import Protocol
+
+
+class CameraConfig(Protocol):
+    CAMERA_POS: list[float]
+    CAMERA_FWD: list[float]
+
+
+class DabCameraConfig(CameraConfig):
+    CAMERA_POS: list[float] = [0.0, 0.9, 2.0]
+    CAMERA_FWD: list[float] = [0.0, 0.5, 2.0]
+
+
+class ZombieCameraConfig(CameraConfig):
+    CAMERA_POS: list[float] = [1.0, 0.7, 4.0]
+    CAMERA_FWD: list[float] = [0.0, 0.5, 4.0]
+
+
+def get_camera_config(ad_animation: str) -> CameraConfig:
+    if ad_animation == "dab":
+        return DabCameraConfig()
+    elif ad_animation == "zombie":
+        return ZombieCameraConfig()
+    else:
+        raise ValueError(f"Invalid animation: {ad_animation}")
+
+
+def create_mvc_config(
+    animated_drawings_dict: dict,
+    video_file_path: Path,
+    ad_animation: str,
+) -> dict:
+    camera_config = get_camera_config(ad_animation)
+
+    mvc_cfg_dict = {
+        "scene": {
+            "ANIMATED_CHARACTERS": [animated_drawings_dict]
+        },  # add the character to the scene
+        "view": {
+            "USE_MESA": True,
+            "CAMERA_POS": camera_config.CAMERA_POS,
+            "CAMERA_FWD": camera_config.CAMERA_FWD,
+        },
+        "controller": {
+            "MODE": "video_render",  # 'video_render' or 'interactive'
+            "OUTPUT_VIDEO_PATH": video_file_path.as_posix(),  # set the output location
+        },
+    }
+
+    return mvc_cfg_dict
 
 
 def create_animated_drawing_dict(
@@ -30,28 +80,6 @@ def create_animated_drawing_dict(
     }
 
     return animated_drawing_dict
-
-
-def create_mvc_config(
-    animated_drawings_dict: dict,
-    video_file_path: Path,
-) -> dict:
-    mvc_cfg_dict = {
-        "scene": {
-            "ANIMATED_CHARACTERS": [animated_drawings_dict]
-        },  # add the character to the scene
-        "view": {
-            "USE_MESA": True,
-            "CAMERA_POS": [2.0, 0.7, 8.0],
-            "CAMERA_FWD": [0.0, 0.5, 8.0],
-        },
-        "controller": {
-            "MODE": "video_render",  # 'video_render' or 'interactive'
-            "OUTPUT_VIDEO_PATH": video_file_path.as_posix(),  # set the output location
-        },
-    }
-
-    return mvc_cfg_dict
 
 
 def save_mvc_config(

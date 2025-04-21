@@ -62,20 +62,20 @@ class MakeAnimationUser(HttpUser):
         ad_id = init_workspace(example_name=example_name)
         ws_host = self.host.replace("http://", "ws://")  # type: ignore
         ws_url = (
-            f"{ws_host}/make_animation_websocket?ad_id={ad_id}&ad_animation={self.ad_animation}"
+            f"{ws_host}/make_animation?ad_id={ad_id}&ad_animation={self.ad_animation}"
         )
 
         ws_client = WebSocketClient(
             connection_id=ad_id,
             url=ws_url,
             environment=self.environment,
-            teardown=lambda: remove_workspace(ad_id),
+            # teardown=lambda: remove_workspace(ad_id),
+            teardown=lambda: None,
             start_test_time=start_test_time,
         )
         ws_client.connect()
 
         gevent.sleep(5)
-
 
 
 # sudo $(poetry run which python) locust_make_animation.py

@@ -207,9 +207,9 @@ async def download_animation(
 def make_animation_openapi(app: FastAPI):
     return custom_openapi(
         app=app,
-        paths="/make_animation_websocket",
+        paths="/make_animation",
         method="post",
-        summary="WebSocket /make_animation_websocket Endpoint",
+        summary="WebSocket /make_animation Endpoint",
         description=(
             "이 엔드포인트는 웹소켓 연결을 위한 엔드포인트입니다. 실제 연결은 웹소켓 프로토콜을 통해 이루어지며, "
             "HTTP GET 라우터는 단지 문서화 목적으로만 포함되어 있습니다."

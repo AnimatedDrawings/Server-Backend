@@ -56,6 +56,7 @@ def prepare_make_animation(
     mvc_cfg_dict = create_mvc_config(
         animated_drawings_dict=animated_drawings_dict,
         video_file_path=video_file_path,
+        ad_animation=ad_animation,
     )
     save_mvc_config(
         mvc_cfg_file_name=MVC_CFG_FILE_NAME,
