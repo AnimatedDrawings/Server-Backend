@@ -54,11 +54,13 @@ def test_create_mvc_config():
         "retarget_cfg": "/path/to/retarget.yaml",
     }
     video_file_path = Path("/path/to/output/video.mp4")
+    ad_animation = ADAnimation.dab.value
 
     # when
     result = pma.create_mvc_config(
         animated_drawings_dict=animated_drawing_dict,
         video_file_path=video_file_path,
+        ad_animation=ad_animation,
     )
 
     # then

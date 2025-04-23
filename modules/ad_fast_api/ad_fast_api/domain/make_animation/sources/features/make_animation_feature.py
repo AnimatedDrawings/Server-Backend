@@ -18,6 +18,9 @@ from fastapi.responses import FileResponse
 from fastapi import WebSocket, WebSocketDisconnect
 from logging import Logger
 import asyncio
+from ad_fast_api.domain.make_animation.sources.errors.make_animation_500_status import (
+    VideoFileNotExistError,
+)
 
 
 def get_file_response(
@@ -114,7 +117,7 @@ async def check_connection_and_rendering(
                 if not video_file_path.exists():
                     msg = "Rendering has been completed, but the video file does not exist."
                     logger.error(msg)
-                    raise Exception(msg)
+                    raise VideoFileNotExistError(msg)
                 logger.info("Rendering has been completed.")
                 return
             render_timer += 1
@@ -128,6 +131,8 @@ async def check_connection_and_rendering(
         logger.error(f"{msg}: {e}")
         await cancel_render_async(job_id=job_id, logger=logger)
         raise Exception(msg)
+    except VideoFileNotExistError as e:
+        raise Exception(str(e))
     except Exception as e:
         msg = f"An error occurred while processing the job : {e}"
         logger.error(msg)
