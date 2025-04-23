@@ -66,7 +66,7 @@ async def test_retry_ping_success():
     # 웹소켓의 send_json이 호출되었는지 확인
     websocket.send_json.assert_called_once_with(
         {
-            "type": "ping",
+            "type": "PING",
             "message": "",
             "data": {},
         }
@@ -95,7 +95,7 @@ async def test_retry_ping_success_on_second_try():
     # 모든 호출이 TYPE_PING과 함께 이루어졌는지 확인
     websocket.send_json.assert_any_call(
         {
-            "type": "ping",
+            "type": "PING",
             "message": "",
             "data": {},
         }
@@ -131,7 +131,7 @@ async def test_retry_pong_success():
     websocket = AsyncMock(spec=WebSocket)
     websocket.receive_json = AsyncMock(
         return_value={
-            "type": "pong",
+            "type": "PONG",
             "message": "",
             "data": {},
         }
@@ -158,7 +158,7 @@ async def test_retry_pong_success_on_second_try():
     websocket.receive_json = AsyncMock(
         side_effect=[
             {"type": "invalid"},
-            {"type": "pong", "message": "", "data": {}},
+            {"type": "PONG", "message": "", "data": {}},
         ]
     )
 
@@ -188,7 +188,7 @@ async def test_retry_pong_exception_then_success():
     websocket.receive_json = AsyncMock(
         side_effect=[
             asyncio.TimeoutError(),
-            {"type": "pong", "message": "", "data": {}},
+            {"type": "PONG", "message": "", "data": {}},
         ]
     )
 

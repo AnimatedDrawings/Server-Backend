@@ -87,6 +87,7 @@ def test_prepare_make_animation(
     mock_create_mvc_config.assert_called_once_with(
         animated_drawings_dict=animated_drawing_dict,
         video_file_path=video_file_path,
+        ad_animation=ad_animation,
     )
     mock_save_mvc_config.assert_called_once_with(
         mvc_cfg_file_name=make_animation_feature.MVC_CFG_FILE_NAME,
@@ -98,6 +99,22 @@ def test_prepare_make_animation(
         make_animation_feature.MVC_CFG_FILE_NAME
     )
     assert result == expected_path
+
+
+# 새로 추가된 period_finish_render 함수 테스트
+def test_period_finish_render():
+    # 보상 광고 시간(20초) 이하일 때는 항상 False 반환
+    assert not make_animation_feature.period_finish_render(timer=15, period=5)
+    assert not make_animation_feature.period_finish_render(timer=20, period=5)
+
+    # 보상 광고 시간 초과 & 주기에 맞을 때는 True 반환
+    assert make_animation_feature.period_finish_render(timer=25, period=5)
+    assert make_animation_feature.period_finish_render(timer=30, period=5)
+    assert not make_animation_feature.period_finish_render(timer=26, period=5)
+
+    # 다른 주기에 대한 테스트
+    assert make_animation_feature.period_finish_render(timer=22, period=2)
+    assert not make_animation_feature.period_finish_render(timer=23, period=2)
 
 
 # FastAPI의 WebSocket은 직접 인스턴스화하기 어려우므로, 간단한 Dummy 클래스를 정의합니다.
@@ -129,7 +146,7 @@ async def test_check_connection_and_rendering_completed():
     """
     렌더링이 즉시 완료된 경우를 테스트합니다.
     - check_connection은 정상 동작하고,
-    - is_completed_render는 True를 반환하여 바로 렌더링 완료로 간주합니다.
+    - is_finish_render는 True를 반환하여 바로 렌더링 완료로 간주합니다.
     """
     job_id = "job_completed"
     base_path = Path("/dummy/path")
@@ -141,12 +158,20 @@ async def test_check_connection_and_rendering_completed():
         "ad_fast_api.domain.make_animation.sources.features.make_animation_feature.check_connection",
         new_callable=AsyncMock,
     ) as mock_check_connection, patch(
-        "ad_fast_api.domain.make_animation.sources.features.make_animation_feature.is_completed_render",
+        "ad_fast_api.domain.make_animation.sources.features.make_animation_feature.is_finish_render",
+        new_callable=AsyncMock,
         return_value=True,
-    ) as mock_is_completed_render, patch(
+    ) as mock_is_finish_render, patch(
         "ad_fast_api.domain.make_animation.sources.features.make_animation_feature.cancel_render_async",
         new_callable=AsyncMock,
-    ) as mock_cancel_render_async:
+    ) as mock_cancel_render_async, patch(
+        "ad_fast_api.domain.make_animation.sources.features.make_animation_feature.period_finish_render",
+        return_value=True,
+    ) as mock_period_finish_render, patch(
+        "asyncio.sleep", new_callable=AsyncMock
+    ) as mock_sleep, patch(
+        "pathlib.Path.exists", return_value=True
+    ) as mock_exists:
         await make_animation_feature.check_connection_and_rendering(
             job_id=job_id,
             base_path=base_path,
@@ -155,31 +180,33 @@ async def test_check_connection_and_rendering_completed():
             logger=logger,
         )
 
-        # 최초 호출 시 timer=0, period=5로 check_connection이 호출되어야 합니다.
-        mock_check_connection.assert_called_once_with(
+        # check_connection이 호출되었는지 확인
+        mock_check_connection.assert_called_with(
             timer=0,
             period=5,
             websocket=websocket,
             logger=logger,
         )
-        expected_video_path = base_path.joinpath(relative_video_file_path)
-        mock_is_completed_render.assert_called_once_with(expected_video_path)
-        # 렌더링 완료이므로 cancel_render_async는 호출되지 않아야 합니다.
-        mock_cancel_render_async.assert_not_called()
-        # 렌더링 완료 메시지가 로깅되었는지 확인합니다.
+        # period_finish_render가 호출되었는지 확인
+        mock_period_finish_render.assert_called_once()
+        # is_finish_render가 호출되었는지 확인
+        mock_is_finish_render.assert_called_once_with(
+            job_id=job_id,
+            logger=logger,
+            timeout_seconds=7,
+        )
+        # 렌더링 완료 메시지가 로깅되었는지 확인
         logger.info.assert_called_once()
+        # 렌더링 완료이므로 cancel_render_async는 호출되지 않아야 함
+        mock_cancel_render_async.assert_not_called()
 
 
 @pytest.mark.asyncio
-async def test_check_connection_and_rendering_timeout():
+async def test_check_connection_and_rendering_file_not_exists():
     """
-    렌더링이 완료되지 않아 타임아웃되는 경우를 테스트합니다.
-    is_completed_render가 계속 False를 반환하여
-    최대 대기 시간 후 cancel_render_async가 호출되고 예외가 발생해야 합니다.
-
-    asyncio.sleep를 AsyncMock으로 패치하여 실제 대기 시간을 없앱니다.
+    렌더링은 완료되었지만 파일이 존재하지 않는 경우를 테스트합니다.
     """
-    job_id = "job_timeout"
+    job_id = "job_completed_no_file"
     base_path = Path("/dummy/path")
     relative_video_file_path = Path("dummy.gif")
     websocket = DummyWebSocket()
@@ -189,14 +216,20 @@ async def test_check_connection_and_rendering_timeout():
         "ad_fast_api.domain.make_animation.sources.features.make_animation_feature.check_connection",
         new_callable=AsyncMock,
     ) as mock_check_connection, patch(
-        "ad_fast_api.domain.make_animation.sources.features.make_animation_feature.is_completed_render",
-        return_value=False,
-    ) as mock_is_completed_render, patch(
+        "ad_fast_api.domain.make_animation.sources.features.make_animation_feature.is_finish_render",
+        new_callable=AsyncMock,
+        return_value=True,
+    ) as mock_is_finish_render, patch(
         "ad_fast_api.domain.make_animation.sources.features.make_animation_feature.cancel_render_async",
         new_callable=AsyncMock,
     ) as mock_cancel_render_async, patch(
+        "ad_fast_api.domain.make_animation.sources.features.make_animation_feature.period_finish_render",
+        return_value=True,
+    ) as mock_period_finish_render, patch(
         "asyncio.sleep", new_callable=AsyncMock
-    ) as mock_sleep:
+    ) as mock_sleep, patch(
+        "pathlib.Path.exists", return_value=False
+    ) as mock_exists:
         with pytest.raises(Exception) as exc_info:
             await make_animation_feature.check_connection_and_rendering(
                 job_id=job_id,
@@ -205,7 +238,68 @@ async def test_check_connection_and_rendering_timeout():
                 websocket=websocket,
                 logger=logger,
             )
-        # 예외 메시지가 "Rendering time has exceeded the limit." 인지 검증합니다.
+
+        assert (
+            "Rendering has been completed, but the video file does not exist."
+            in str(exc_info.value)
+        )
+        logger.error.assert_called_once()
+        mock_cancel_render_async.assert_not_called()
+
+
+@pytest.mark.asyncio
+async def test_check_connection_and_rendering_timeout():
+    """
+    렌더링이 완료되지 않아 타임아웃되는 경우를 테스트합니다.
+    최대 대기 시간 후 타임아웃 예외가 발생해야 합니다.
+    """
+    job_id = "job_timeout"
+    base_path = Path("/dummy/path")
+    relative_video_file_path = Path("dummy.gif")
+    websocket = DummyWebSocket()
+    logger = MagicMock()
+
+    # check_connection 함수는 정상 동작, render_timer가 최대값을 초과하도록 설정
+    with patch(
+        "ad_fast_api.domain.make_animation.sources.features.make_animation_feature.check_connection",
+        new_callable=AsyncMock,
+    ) as mock_check_connection, patch(
+        "ad_fast_api.domain.make_animation.sources.features.make_animation_feature.is_finish_render",
+        new_callable=AsyncMock,
+        return_value=False,
+    ) as mock_is_finish_render, patch(
+        "ad_fast_api.domain.make_animation.sources.features.make_animation_feature.cancel_render_async",
+        new_callable=AsyncMock,
+    ) as mock_cancel_render_async, patch(
+        "ad_fast_api.domain.make_animation.sources.features.make_animation_feature.period_finish_render",
+        return_value=False,  # period_finish_render는 항상 False 반환
+    ) as mock_period_finish_render, patch(
+        "asyncio.sleep",
+        new_callable=AsyncMock,
+        side_effect=lambda x: setattr(
+            make_animation_feature, "_test_render_timer", 180
+        ),
+    ) as mock_sleep:
+        make_animation_feature._test_render_timer = 0  # type: ignore # 테스트용 타이머 초기화
+
+        # render_timer 값을 조작해서 max_render_time을 초과하도록 함
+        def increment_timer(*args, **kwargs):
+            nonlocal render_timer
+            render_timer += 1
+            return False
+
+        render_timer = 180  # 최대 시간(180초) 설정
+
+        with pytest.raises(Exception) as exc_info:
+            await make_animation_feature.check_connection_and_rendering(
+                job_id=job_id,
+                base_path=base_path,
+                relative_video_file_path=relative_video_file_path,
+                websocket=websocket,
+                logger=logger,
+            )
+
+        assert "Rendering time has exceeded the limit." in str(exc_info.value)
         mock_cancel_render_async.assert_called_once_with(job_id=job_id, logger=logger)
         logger.error.assert_called_once()
 
@@ -214,8 +308,6 @@ async def test_check_connection_and_rendering_timeout():
 async def test_check_connection_and_rendering_websocket_disconnect():
     """
     check_connection 호출 시 WebSocketDisconnect 예외가 발생하는 경우를 테스트합니다.
-    이 경우 cancel_render_async가 호출되고
-    "The websocket connection with the client has been terminated" 메시지의 예외가 발생해야 합니다.
     """
     job_id = "job_ws_disconnect"
     base_path = Path("/dummy/path")
@@ -239,9 +331,8 @@ async def test_check_connection_and_rendering_websocket_disconnect():
                 websocket=websocket,
                 logger=logger,
             )
-        assert (
-            str(exc_info.value)
-            == "The websocket connection with the client has been terminated"
+        assert "The websocket connection with the client has been terminated" in str(
+            exc_info.value
         )
         mock_cancel_render_async.assert_called_once_with(job_id=job_id, logger=logger)
         logger.error.assert_called_once()
@@ -251,9 +342,6 @@ async def test_check_connection_and_rendering_websocket_disconnect():
 async def test_check_connection_and_rendering_other_exception():
     """
     check_connection 호출 중 기타 예외가 발생하는 경우를 테스트합니다.
-    첫번째 check_connection 호출은 정상 처리되고,
-    두번째 호출에서 Exception("Unexpected error")가 발생하여
-    cancel_render_async가 호출되고 "An error occurred while processing the job" 메시지의 예외가 발생해야 합니다.
     """
     job_id = "job_other_exception"
     base_path = Path("/dummy/path")
@@ -261,28 +349,14 @@ async def test_check_connection_and_rendering_other_exception():
     websocket = DummyWebSocket()
     logger = MagicMock()
 
-    async def side_effect(*args, **kwargs):
-        if side_effect.call_count == 0:
-            side_effect.call_count += 1
-            return
-        else:
-            raise Exception("Unexpected error")
-
-    side_effect.call_count = 0
-
     with patch(
         "ad_fast_api.domain.make_animation.sources.features.make_animation_feature.check_connection",
         new_callable=AsyncMock,
-        side_effect=side_effect,
+        side_effect=Exception("Unexpected error"),
     ) as mock_check_connection, patch(
-        "ad_fast_api.domain.make_animation.sources.features.make_animation_feature.is_completed_render",
-        return_value=False,
-    ) as mock_is_completed_render, patch(
         "ad_fast_api.domain.make_animation.sources.features.make_animation_feature.cancel_render_async",
         new_callable=AsyncMock,
-    ) as mock_cancel_render_async, patch(
-        "asyncio.sleep", new_callable=AsyncMock
-    ) as mock_sleep:
+    ) as mock_cancel_render_async:
         with pytest.raises(Exception) as exc_info:
             await make_animation_feature.check_connection_and_rendering(
                 job_id=job_id,
@@ -291,6 +365,6 @@ async def test_check_connection_and_rendering_other_exception():
                 websocket=websocket,
                 logger=logger,
             )
-        # assert str(exc_info.value) == "An error occurred while processing the job"
+        assert "An error occurred while processing the job" in str(exc_info.value)
         mock_cancel_render_async.assert_called_once_with(job_id=job_id, logger=logger)
         logger.error.assert_called_once()

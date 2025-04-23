@@ -21,7 +21,9 @@ async def test_start_render_none_response():
     with patch.object(img_anim, "get_zero_client", return_value=dummy_client):
         logger = logging.getLogger("test_start_render_none_response")
         result = await img_anim.start_render_async(
-            Path("/dummy/path"), logger, timeout=1000
+            Path("/dummy/path"),
+            logger,
+            timeout_seconds=1,
         )
         assert result["type"] == WebSocketType.ERROR
 
@@ -40,7 +42,9 @@ async def test_start_render_running():
     with patch.object(img_anim, "get_zero_client", return_value=dummy_client):
         logger = logging.getLogger("test_start_render_running")
         result = await img_anim.start_render_async(
-            Path("/dummy/path"), logger, timeout=1000
+            Path("/dummy/path"),
+            logger,
+            timeout_seconds=1,
         )
         assert result["type"] == WebSocketType.RUNNING
         assert result["data"]["job_id"] == "job123"  # type: ignore
@@ -57,7 +61,9 @@ async def test_start_render_fulljob():
     with patch.object(img_anim, "get_zero_client", return_value=dummy_client):
         logger = logging.getLogger("test_start_render_fulljob")
         result = await img_anim.start_render_async(
-            Path("/dummy/path"), logger, timeout=1000
+            Path("/dummy/path"),
+            logger,
+            timeout_seconds=1,
         )
         assert result["type"] == WebSocketType.FULL_JOB
 
@@ -73,7 +79,9 @@ async def test_start_render_unknown_type():
     with patch.object(img_anim, "get_zero_client", return_value=dummy_client):
         logger = logging.getLogger("test_start_render_unknown_type")
         result = await img_anim.start_render_async(
-            Path("/dummy/path"), logger, timeout=1000
+            Path("/dummy/path"),
+            logger,
+            timeout_seconds=1,
         )
         assert result["type"] == WebSocketType.ERROR
 
@@ -89,7 +97,9 @@ async def test_start_render_exception():
     with patch.object(img_anim, "get_zero_client", return_value=dummy_client):
         logger = logging.getLogger("test_start_render_exception")
         result = await img_anim.start_render_async(
-            Path("/dummy/path"), logger, timeout=1000
+            Path("/dummy/path"),
+            logger,
+            timeout_seconds=1,
         )
         assert result["type"] == WebSocketType.ERROR
 
@@ -104,7 +114,11 @@ async def test_cancel_render_none_response():
 
     with patch.object(img_anim, "get_zero_client", return_value=dummy_client):
         logger = logging.getLogger("test_cancel_render_none_response")
-        result = await img_anim.cancel_render_async("job123", logger, timeout=1000)
+        result = await img_anim.cancel_render_async(
+            "job123",
+            logger,
+            timeout_seconds=1,
+        )
         assert result is None
 
 
@@ -118,7 +132,11 @@ async def test_cancel_render_terminate():
 
     with patch.object(img_anim, "get_zero_client", return_value=dummy_client):
         logger = logging.getLogger("test_cancel_render_terminate")
-        result = await img_anim.cancel_render_async("job123", logger, timeout=1000)
+        result = await img_anim.cancel_render_async(
+            "job123",
+            logger,
+            timeout_seconds=1,
+        )
         assert result is None
 
 
@@ -132,7 +150,11 @@ async def test_cancel_render_unknown():
 
     with patch.object(img_anim, "get_zero_client", return_value=dummy_client):
         logger = logging.getLogger("test_cancel_render_unknown")
-        result = await img_anim.cancel_render_async("job123", logger, timeout=1000)
+        result = await img_anim.cancel_render_async(
+            "job123",
+            logger,
+            timeout_seconds=1,
+        )
         assert result is None
 
 
@@ -146,19 +168,82 @@ async def test_cancel_render_exception():
 
     with patch.object(img_anim, "get_zero_client", return_value=dummy_client):
         logger = logging.getLogger("test_cancel_render_exception")
-        result = await img_anim.cancel_render_async("job123", logger, timeout=1000)
+        result = await img_anim.cancel_render_async(
+            "job123",
+            logger,
+            timeout_seconds=1,
+        )
         assert result is None
 
 
-def test_is_completed_render(tmp_path):
+@pytest.mark.asyncio
+async def test_is_finish_render_finished():
     """
-    파일이 존재할 경우 True, 존재하지 않으면 False를 반환하는지 확인합니다.
+    is_finish_render 함수가 'TERMINATE' 응답인 경우 True를 반환하는지 확인합니다.
     """
-    # 파일이 존재하는 경우
-    file_path = tmp_path / "video.mp4"
-    file_path.write_text("dummy content")
-    assert img_anim.is_completed_render(file_path) is True
+    dummy_client = AsyncMock()
+    dummy_client.call.return_value = {"type": "TERMINATE"}
 
-    # 파일이 존재하지 않는 경우
-    non_existent = tmp_path / "nonexistent.mp4"
-    assert img_anim.is_completed_render(non_existent) is False
+    with patch.object(img_anim, "get_zero_client", return_value=dummy_client):
+        logger = logging.getLogger("test_is_finish_render_finished")
+        result = await img_anim.is_finish_render("job123", logger, timeout_seconds=1)
+        assert result is True
+
+
+@pytest.mark.asyncio
+async def test_is_finish_render_running():
+    """
+    is_finish_render 함수가 'RUNNING' 응답인 경우 False를 반환하는지 확인합니다.
+    """
+    dummy_client = AsyncMock()
+    dummy_client.call.return_value = {"type": "RUNNING"}
+
+    with patch.object(img_anim, "get_zero_client", return_value=dummy_client):
+        logger = logging.getLogger("test_is_finish_render_running")
+        result = await img_anim.is_finish_render("job123", logger, timeout_seconds=1)
+        assert result is False
+
+
+@pytest.mark.asyncio
+async def test_is_finish_render_none_response():
+    """
+    is_finish_render 함수가 None 응답인 경우, 예외를 발생시키는지 확인합니다.
+    """
+    dummy_client = AsyncMock()
+    dummy_client.call.return_value = None
+
+    with patch.object(img_anim, "get_zero_client", return_value=dummy_client):
+        logger = logging.getLogger("test_is_finish_render_none_response")
+        with pytest.raises(Exception) as excinfo:
+            await img_anim.is_finish_render("job123", logger, timeout_seconds=1)
+        assert "no return value" in str(excinfo.value)
+
+
+@pytest.mark.asyncio
+async def test_is_finish_render_unknown_response():
+    """
+    is_finish_render 함수가 알 수 없는 type의 응답인 경우, 예외를 발생시키는지 확인합니다.
+    """
+    dummy_client = AsyncMock()
+    dummy_client.call.return_value = {"type": "UNKNOWN_TYPE"}
+
+    with patch.object(img_anim, "get_zero_client", return_value=dummy_client):
+        logger = logging.getLogger("test_is_finish_render_unknown_response")
+        with pytest.raises(Exception) as excinfo:
+            await img_anim.is_finish_render("job123", logger, timeout_seconds=1)
+        assert "unknown" in str(excinfo.value)
+
+
+@pytest.mark.asyncio
+async def test_is_finish_render_exception():
+    """
+    is_finish_render 함수 호출 중 예외가 발생할 경우, 해당 예외가 전달되는지 확인합니다.
+    """
+    dummy_client = AsyncMock()
+    dummy_client.call.side_effect = Exception("Test exception")
+
+    with patch.object(img_anim, "get_zero_client", return_value=dummy_client):
+        logger = logging.getLogger("test_is_finish_render_exception")
+        with pytest.raises(Exception) as excinfo:
+            await img_anim.is_finish_render("job123", logger, timeout_seconds=1)
+        assert "Test exception" in str(excinfo.value)

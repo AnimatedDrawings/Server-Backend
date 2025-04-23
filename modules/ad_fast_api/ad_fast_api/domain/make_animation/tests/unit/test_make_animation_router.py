@@ -28,8 +28,15 @@ class FakePath:
     def __str__(self):
         return self.path
 
+    def stat(self):
+        # 파일 크기를 모의하는 객체 반환
+        class FakeStat:
+            def __init__(self):
+                self.st_size = 1024  # 가상의 파일 크기
 
-# -------------------------------------------
+        return FakeStat()
+
+
 # /download_animation 엔드포인트 테스트 - 파일이 존재하는 경우
 def test_download_animation_file_exists(monkeypatch):
     fake_video_path = FakePath(True, "fake/full/path.mp4")
@@ -59,7 +66,6 @@ def test_download_animation_file_exists(monkeypatch):
     assert response.text == "dummy file content"
 
 
-# -------------------------------------------
 # /download_animation 엔드포인트 테스트 - 파일이 존재하지 않는 경우
 def test_download_animation_file_not_exists(monkeypatch):
     fake_video_path = FakePath(False, "fake/full/path.mp4")
@@ -83,7 +89,6 @@ def test_download_animation_file_not_exists(monkeypatch):
     assert response.status_code == 500
 
 
-# -------------------------------------------
 # /make_animation 웹소켓 엔드포인트 테스트 - 파일이 이미 존재하는 경우
 def test_make_animation_websocket_file_exists(monkeypatch):
     fake_video_path = FakePath(True, "fake/full/path.mp4")
@@ -114,7 +119,6 @@ def test_make_animation_websocket_file_exists(monkeypatch):
         assert data["data"]["file_path"] == fake_relative_path
 
 
-# -------------------------------------------
 # /make_animation 웹소켓 엔드포인트 테스트 - 파일이 존재하지 않아 렌더링 프로세스 진행하는 경우
 def test_make_animation_websocket_file_not_exists(monkeypatch):
     fake_video_path = FakePath(False, "fake/full/path.mp4")
@@ -179,7 +183,6 @@ def test_make_animation_websocket_file_not_exists(monkeypatch):
         assert second_message["data"]["file_path"] == fake_relative_path
 
 
-# -------------------------------------------
 # /make_animation 웹소켓 엔드포인트 테스트 - 유효하지 않은 애니메이션 이름인 경우
 def test_make_animation_websocket_invalid_animation(monkeypatch):
     # check_available_animation이 예외를 발생하도록 패치합니다.

@@ -30,12 +30,12 @@ def ping():
 
 
 @app.get("/ping_animated_drawings")
-def ping_animated_drawings(test_param: int):
+async def ping_animated_drawings(test_param: int):
     from ad_fast_api.domain.make_animation.sources.features.image_to_animation import (
         get_zero_client,
     )
 
-    respone = get_zero_client().call("ping", test_param)
+    respone = await get_zero_client().call("ping", test_param)
     return {"ping_animated_drawings": respone}
 
 
@@ -58,5 +58,5 @@ if __name__ == "__main__":
         host="0.0.0.0",
         port=internal_port,
         reload=True,
-        reload_dirs=["/ad_fast_api"],
+        reload_dirs=["./ad_fast_api"],
     )

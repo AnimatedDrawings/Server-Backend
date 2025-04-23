@@ -4,7 +4,7 @@ services:
     build:
       context: ./modules/ad_torchserve
       dockerfile: ./ad_torchserve.Dockerfile
-    # restart: always
+    restart: always
     expose:
       - 8080
       - 8081
@@ -33,7 +33,7 @@ services:
     volumes:
       - ./modules/ad_fast_api/ad_fast_api/workspace/files:/${ROOT_DIR}/${ANIMATED_DRAWINGS_WORKSPACE_DIR}/files
       - ./modules/ad_fast_api/ad_fast_api/workspace/config:/${ROOT_DIR}/${ANIMATED_DRAWINGS_WORKSPACE_DIR}/config
-    # restart: always
+    restart: always
     expose:
       - ${ANIMATED_DRAWINGS_INTERNAL_PORT}
     # use ports only case test or locust test
@@ -57,7 +57,7 @@ services:
         ROOT_DIR: ${ROOT_DIR}
         INTERNAL_PORT: ${AD_FAST_API_INTERNAL_PORT}
         ANIMATED_DRAWINGS_WORKSPACE_DIR: ${ANIMATED_DRAWINGS_WORKSPACE_DIR}
-    # restart: always
+    restart: always
     ports:
       - ${AD_FAST_API_EXTERNAL_PORT}:${AD_FAST_API_INTERNAL_PORT}
     volumes:

@@ -2,3 +2,5 @@ ad_fast_api/workspace/files/*
 !ad_fast_api/workspace/files/example1
 !ad_fast_api/workspace/files/garlic
 
+.venv/
+.coverage
