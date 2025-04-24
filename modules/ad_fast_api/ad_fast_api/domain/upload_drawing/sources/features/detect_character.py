@@ -11,6 +11,7 @@ from numpy.typing import NDArray
 import json
 from ad_fast_api.domain.schema.sources.schemas import BoundingBox
 from ad_fast_api.workspace.sources import conf_workspace as cw
+from fastapi import HTTPException
 
 
 DETECT_CHARACTER_TORCHSERVE_URL = (
@@ -71,6 +72,16 @@ async def detect_character_from_origin_async(
             msg = ud5s.DETECT_CHARACTER_TORCHSERVE_ERROR.format(resp=str(e))
             logger.critical(msg)
             raise Exception(msg)
+
+        if resp.status_code == 503:
+            msg = ud5s.DETECT_CHARACTER_TORCHSERVE_ERROR.format(resp=resp)
+            logger.critical(
+                f"{msg}, work load is too high, status code: {resp.status_code}"
+            )
+            raise HTTPException(
+                status_code=503,
+                detail=msg,
+            )
 
         if resp.status_code >= 300:
             msg = ud5s.DETECT_CHARACTER_TORCHSERVE_ERROR.format(resp=resp)

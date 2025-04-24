@@ -80,11 +80,10 @@ class CutoutCharacterUser(HttpUser):
             files=self.files,
         )
 
-        if response.status_code == 200:
-            logging.warning(f"상태 코드: {response.status_code}")
-            completed_time = time.time() - start_test_time  # type: ignore
-            logging.warning(f"완료 시간: {completed_time}초")
-        elif response.status_code >= 400:
+        logging.warning(f"상태 코드: {response.status_code}")
+        completed_time = time.time() - start_test_time  # type: ignore
+        logging.warning(f"완료 시간: {completed_time}초")
+        if response.status_code >= 400:
             try:
                 error_detail = response.json().get("detail", "상세 오류 정보 없음")
                 logging.error(f"HTTP 예외 상세 정보: {error_detail}")
