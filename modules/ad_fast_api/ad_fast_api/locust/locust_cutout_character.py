@@ -8,10 +8,51 @@ from ad_fast_api.snippets.sources.ad_case_test_helper import (
     init_workspace,
     remove_workspace,
 )
+import logging
+import psutil
+import time
+import threading
+from locust import events
+
+
+start_test_time = None
+max_cpu_usage = 0
+
+
+def monitor_cpu(interval=1):
+    global max_cpu_usage
+    while True:
+        # interval 시간 동안의 CPU 사용률 측정
+        usage = psutil.cpu_percent(interval=interval)
+        if usage > max_cpu_usage:
+            max_cpu_usage = usage
+
+
+@events.test_start.add_listener
+def on_start_load_test(environment, **kwargs):
+    global start_test_time
+
+    start_test_time = time.time()
+
+    logging.warning(
+        f"테스트 시작 시간: {time.strftime('%Y-%m-%d %H:%M:%S', time.localtime(start_test_time))}"
+    )
+
+    cpu_monitor_thread = threading.Thread(target=monitor_cpu, args=(1,), daemon=True)
+    cpu_monitor_thread.start()
+
+
+@events.test_stop.add_listener
+def on_stop_load_test(environment, **kwargs):
+    stop_time = time.time()
+
+    logging.warning(
+        f"테스트 종료 시간: {time.strftime('%Y-%m-%d %H:%M:%S', time.localtime(stop_time))}"
+    )
+    logging.warning(f"최대 CPU 사용량: {max_cpu_usage}%")
 
 
 class CutoutCharacterUser(HttpUser):
-    wait_time = between(2, 4)
     host = "http://localhost:2010"
 
     def on_start(self):
@@ -39,10 +80,21 @@ class CutoutCharacterUser(HttpUser):
             files=self.files,
         )
 
+        if response.status_code == 200:
+            logging.warning(f"상태 코드: {response.status_code}")
+            completed_time = time.time() - start_test_time  # type: ignore
+            logging.warning(f"완료 시간: {completed_time}초")
+        elif response.status_code >= 400:
+            try:
+                error_detail = response.json().get("detail", "상세 오류 정보 없음")
+                logging.error(f"HTTP 예외 상세 정보: {error_detail}")
+            except Exception as e:
+                logging.error(f"응답 JSON 파싱 실패: {e}")
+
         remove_workspace(ad_id=ad_id)
-        gevent.sleep(3)
+        gevent.sleep(5)
 
 
 # sudo $(poetry run which python) locust_cutout_character.py
-# sudo $(which locust) -f locust_cutout_character.py
+# sudo $(which locust) -f locust_cutout_character.py --loglevel=WARNING
 # locust -f locust_cutout_character.py
