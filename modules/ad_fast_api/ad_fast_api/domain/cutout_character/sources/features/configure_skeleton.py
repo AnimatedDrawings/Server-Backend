@@ -12,6 +12,7 @@ import json
 from pathlib import Path
 from ad_fast_api.workspace.sources.conf_workspace import CHAR_CFG_FILE_NAME
 from ad_fast_api.snippets.sources.save_dict import dict_to_file
+from fastapi import HTTPException
 
 
 GET_SKELETON_TORCHSERVE_URL = (
@@ -52,6 +53,16 @@ async def get_pose_result_async(
             msg = cc5s.GET_SKELETON_TORCHSERVE_ERROR.format(resp=str(e))
             logger.critical(msg)
             raise Exception(msg)
+
+        if resp.status_code == 503:
+            msg = cc5s.GET_SKELETON_TORCHSERVE_ERROR.format(resp=resp)
+            logger.critical(
+                f"{msg}, work load is too high, status code: {resp.status_code}"
+            )
+            raise HTTPException(
+                status_code=503,
+                detail=msg,
+            )
 
         if resp is None or resp.status_code >= 300:
             msg = cc5s.GET_SKELETON_TORCHSERVE_ERROR.format(resp=resp)
